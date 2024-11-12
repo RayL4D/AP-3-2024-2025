@@ -8,13 +8,12 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Categorie;
-use App\Controller\CategorieController;
 use App\Form\CategorieFormType;
 
 
 class CategorieController extends AbstractController
 {
-    #[Route('/categorie', name: 'app_categorie')]
+    #[Route('/admin/categorie', name: 'app_categorie')]
     public function index(): Response
     {
         return $this->render('categorie/index.html.twig', [
@@ -22,7 +21,7 @@ class CategorieController extends AbstractController
         ]);
     }
 
-    #[Route('/categorie/creerform', name: 'app_categorie_creer_form')]
+    #[Route('/admin/categorie/creerform', name: 'app_categorie_creer_form')]
  public function creerform(Request $request, EntityManagerInterface $entityManager): Response
  {
      // Création d'une nouvelle instance de l'entité Station

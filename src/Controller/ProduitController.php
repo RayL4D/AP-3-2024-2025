@@ -8,7 +8,6 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Produit;
-use App\Controller\ProduitController;
 use App\Form\ProduitType;
 
 class ProduitController extends AbstractController
