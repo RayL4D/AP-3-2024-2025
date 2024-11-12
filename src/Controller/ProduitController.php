@@ -8,8 +8,12 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Produit;
+use App\Entity\Categorie;
 use App\Controller\ProduitController;
 use App\Form\ProduitType;
+use App\Repository\ProduitRepository;
+use App\Repository\CategorieRepository;
+
 
 class ProduitController extends AbstractController
 {
@@ -58,14 +62,16 @@ class ProduitController extends AbstractController
     }
 
     #[Route('/produit/list', name: 'produit_list')]
-public function listProduits(EntityManagerInterface $entityManager): Response
+public function listProduits(EntityManagerInterface $entityManager, ProduitRepository $produitRepository, CategorieRepository $categorieRepository): Response
 {
     // Récupérer toutes les stations depuis la base de données
-    $produits = $entityManager->getRepository(Produit::class)->findAll();
+    $produits = $produitRepository->findAll();
+    $categorie = $categorieRepository ->findAll();
 
     // Passer les stations à la vue
     return $this->render('produit/list.html.twig', [
         'produits' => $produits,
+        'categories' => $categorie,
     ]);
 }
 }

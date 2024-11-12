@@ -22,7 +22,8 @@ class Produit
     #[ORM\Column(length: 255)]
     private ?string $quantite = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(targetEntity: Categorie::class)]
+    #[ORM\JoinColumn(name: 'categorie_id', referencedColumnName: 'id', nullable: true)]
     private ?Categorie $lesCategories = null;
 
     public function getId(): ?int
