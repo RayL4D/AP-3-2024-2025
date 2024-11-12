@@ -14,7 +14,7 @@ use App\Form\CategorieFormType;
 
 class CategorieController extends AbstractController
 {
-    #[Route('/categorie', name: 'app_categorie')]
+    #[Route('/admin/categorie', name: 'app_categorie')]
     public function index(): Response
     {
         return $this->render('categorie/index.html.twig', [
