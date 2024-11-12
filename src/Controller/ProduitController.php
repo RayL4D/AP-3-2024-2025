@@ -24,7 +24,7 @@ class ProduitController extends AbstractController
             'controller_name' => 'ProduitController',
         ]);
     }
-    #[Route('/produit/creerform', name: 'app_produit_creer_form')]
+    #[Route('/admin/produit/creerform', name: 'app_produit_creer_form')]
     public function creerform(Request $request, EntityManagerInterface $entityManager): Response
     {
         // Création d'une nouvelle instance de l'entité Station

@@ -2,11 +2,12 @@
 
 namespace App\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Entity\Categorie;
 use App\Controller\CategorieController;
 use App\Form\CategorieFormType;
@@ -14,15 +15,40 @@ use App\Form\CategorieFormType;
 
 class CategorieController extends AbstractController
 {
-    #[Route('/admin/categorie', name: 'app_categorie')]
-    public function index(): Response
+    #[Route('/categorie', name: 'app_categorie')]
+    public function index(EntityManagerInterface $entityManager): Response
     {
-        return $this->render('categorie/index.html.twig', [
-            'controller_name' => 'CategorieController',
+        // Récupérer toutes les catégories
+        $categories = $entityManager->getRepository(Categorie::class)->findAll();
+
+        // Passer les catégories à la vue
+        return $this->render('categorie/list.html.twig', [
+            'categories' => $categories, // Passer les catégories récupérées à la vue
+        ]);
+    }
+    #[Route('/categorie/{id}/edit', name: 'edit_categorie')]
+    public function edit(Categorie $categorie, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        // Créer le formulaire pour modifier la catégorie
+        $form = $this->createForm(CategorieFormType::class, $categorie);
+        $form->handleRequest($request);
+
+        // Si le formulaire est soumis et valide
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Sauvegarder les modifications
+            $entityManager->flush();
+
+            // Rediriger vers la liste des catégories ou vers la page de modification
+            return $this->redirectToRoute('app_categorie');
+        }
+
+        return $this->render('categorie/edit.html.twig', [
+            'categorie' => $categorie,
+            'form' => $form->createView(),
         ]);
     }
 
-    #[Route('/categorie/creerform', name: 'app_categorie_creer_form')]
+    #[Route('/admin/categorie/creerform', name: 'app_categorie_creer_form')]
  public function creerform(Request $request, EntityManagerInterface $entityManager): Response
  {
      // Création d'une nouvelle instance de l'entité Station

@@ -1,0 +1,15 @@
+{# templates/categorie/edit.html.twig #}
+
+{% extends 'security/base.html.twig' %}
+
+{% block title %}Modifier une catégorie{% endblock %}
+
+{% block body %}
+    <h1>Modifier la catégorie : {{ categorie.nom }}</h1>
+
+    {# Formulaire pour modifier le nom de la catégorie #}
+    {{ form_start(form) }}
+        {{ form_row(form.nom) }}
+        <button type="submit" class="btn btn-primary">Sauvegarder</button>
+    {{ form_end(form) }}
+{% endblock %}

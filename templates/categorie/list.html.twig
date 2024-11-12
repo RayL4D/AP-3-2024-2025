@@ -1,0 +1,31 @@
+{# templates/categorie/index.html.twig #}
+
+{% extends 'security/base.html.twig' %}
+
+{% block title %}Liste des catégories{% endblock %}
+
+{% block body %}
+    <h1>Liste des catégories</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Nom de la catégorie</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for categorie in categories %}
+                <tr>
+                    <td>{{ categorie.id }}</td>
+                    <td>{{ categorie.nom }}</td>
+                    <td>
+                        <a href="{{ path('edit_categorie', {'id': categorie.id}) }}" class="btn btn-primary">Modifier</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+     <a href="{{ path('app_categorie_creer_form') }}" class="btn btn-primary">Ajouter Catagorie</a>
+{% endblock %}
