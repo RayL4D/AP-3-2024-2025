@@ -23,22 +23,18 @@ class CategorieController extends AbstractController
 
         // Passer les catégories à la vue
         return $this->render('categorie/list.html.twig', [
-            'categories' => $categories, // Passer les catégories récupérées à la vue
+            'categories' => $categories,
         ]);
     }
+
     #[Route('/categorie/{id}/edit', name: 'edit_categorie')]
     public function edit(Categorie $categorie, Request $request, EntityManagerInterface $entityManager): Response
     {
-        // Créer le formulaire pour modifier la catégorie
         $form = $this->createForm(CategorieFormType::class, $categorie);
         $form->handleRequest($request);
 
-        // Si le formulaire est soumis et valide
         if ($form->isSubmitted() && $form->isValid()) {
-            // Sauvegarder les modifications
             $entityManager->flush();
-
-            // Rediriger vers la liste des catégories ou vers la page de modification
             return $this->redirectToRoute('app_categorie');
         }
 
@@ -48,40 +44,33 @@ class CategorieController extends AbstractController
         ]);
     }
 
+    #[Route('/categorie/{id}/delete', name: 'delete_categorie', methods: ['POST'])]
+    public function delete(Categorie $categorie, EntityManagerInterface $entityManager): RedirectResponse
+    {
+        // Supprimer la catégorie de la base de données
+        $entityManager->remove($categorie);
+        $entityManager->flush();
+
+        // Rediriger vers la liste des catégories après la suppression
+        return $this->redirectToRoute('app_categorie');
+    }
+
     #[Route('/admin/categorie/creerform', name: 'app_categorie_creer_form')]
- public function creerform(Request $request, EntityManagerInterface $entityManager): Response
- {
-     // Création d'une nouvelle instance de l'entité Station
-     $categorie = new Categorie();
+    public function creerform(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $categorie = new Categorie();
+        $form = $this->createForm(CategorieFormType::class, $categorie);
+        $form->handleRequest($request);
 
-     // Création du formulaire en associant l'entité Station
-     $form = $this->createForm(CategorieFormType::class, $categorie);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->persist($categorie);
+            $entityManager->flush();
 
-     // Traitement de la requête HTTP
-     // Cette ligne permet au formulaire de gérer les données soumises par l'utilisateur
-     $form->handleRequest($request);
+            return $this->redirectToRoute('app_categorie');
+        }
 
-     // Vérification si le formulaire a été soumis et si les données sont valides
-     if ($form->isSubmitted() && $form->isValid()) {
-         // Récupération des données du formulaire
-         // Cette étape est optionnelle car l'entité $station est déjà mise à jour
-         $categorie = $form->getData();
-
-         // Préparation de l'entité pour la sauvegarde en base de données
-         $entityManager->persist($categorie);
-
-         // Exécution de la requête pour sauvegarder l'entité
-         $entityManager->flush();
-
-         // Redirection vers une autre page après le succès de l'opération
-         // Assurez-vous que la route 'task_success' existe
-         return $this->redirectToRoute('task_success');
-     }
-
-     // Affichage du formulaire dans la vue Twig
-     return $this->render('categorie/new.html.twig', [
-         // Transmission de la vue du formulaire à la template Twig
-         'form' => $form->createView(),
-     ]);
- }
+        return $this->render('categorie/new.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
 }
