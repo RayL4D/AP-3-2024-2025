@@ -12,7 +12,7 @@ use App\Entity\Categorie;
 use App\Form\ProduitType;
 use App\Repository\ProduitRepository;
 use App\Repository\CategorieRepository;
-
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class ProduitController extends AbstractController
 {
@@ -23,44 +23,27 @@ class ProduitController extends AbstractController
             'controller_name' => 'ProduitController',
         ]);
     }
+
     #[Route('/admin/produit/creerform', name: 'app_produit_creer_form')]
     public function creerform(Request $request, EntityManagerInterface $entityManager): Response
     {
-        // Création d'une nouvelle instance de l'entité Station
         $produit = new Produit();
-   
-        // Création du formulaire en associant l'entité Station
         $form = $this->createForm(ProduitType::class, $produit);
-   
-        // Traitement de la requête HTTP
-        // Cette ligne permet au formulaire de gérer les données soumises par l'utilisateur
         $form->handleRequest($request);
-   
-        // Vérification si le formulaire a été soumis et si les données sont valides
+
         if ($form->isSubmitted() && $form->isValid()) {
-            // Récupération des données du formulaire
-            // Cette étape est optionnelle car l'entité $station est déjà mise à jour
             $produit = $form->getData();
-   
-            // Préparation de l'entité pour la sauvegarde en base de données
             $entityManager->persist($produit);
-   
-            // Exécution de la requête pour sauvegarder l'entité
             $entityManager->flush();
-   
-            // Redirection vers une autre page après le succès de l'opération
-            // Assurez-vous que la route 'task_success' existe
-            return $this->redirectToRoute('task_success');
+            return $this->redirectToRoute('produit_list');
         }
-   
-        // Affichage du formulaire dans la vue Twig
+
         return $this->render('produit/new.html.twig', [
-            // Transmission de la vue du formulaire à la template Twig
             'form' => $form->createView(),
         ]);
     }
 
-    #[Route('/produit/list', name: 'produit_list')]
+    #[Route('/admin/produit/list', name: 'produit_list')]
 public function listProduits(EntityManagerInterface $entityManager, ProduitRepository $produitRepository, CategorieRepository $categorieRepository): Response
 {
     // Récupérer toutes les stations depuis la base de données
@@ -73,4 +56,32 @@ public function listProduits(EntityManagerInterface $entityManager, ProduitRepos
         'categories' => $categorie,
     ]);
 }
+#[Route('/produit/{id}/edit', name: 'edit_produit')]
+public function edit(Produit $produit, Request $request, EntityManagerInterface $entityManager): Response
+{
+    $form = $this->createForm(ProduitType::class, $produit);
+    $form->handleRequest($request);
+
+    if ($form->isSubmitted() && $form->isValid()) {
+        $entityManager->flush();
+        return $this->redirectToRoute('produit_list');
+    }
+
+    return $this->render('produit/edit.html.twig', [
+        'produits' => $produit,
+        'form' => $form->createView(),
+    ]);
+}
+
+#[Route('/produit/{id}/delete', name: 'delete_produit', methods: ['POST'])]
+public function delete(Produit $produit, EntityManagerInterface $entityManager): RedirectResponse
+{
+    // Supprimer la catégorie de la base de données
+    $entityManager->remove($produit);
+    $entityManager->flush();
+
+    // Rediriger vers la liste des catégories après la suppression
+    return $this->redirectToRoute('produit_list');
+}
+
 }

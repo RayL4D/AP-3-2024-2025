@@ -1,0 +1,34 @@
+{# templates/categorie/edit.html.twig #}
+
+{% extends 'security/base.html.twig' %}
+
+{% block title %}Modifier un Produit{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <h1>Modifier le produit : {{ produits.nom }}</h1>
+
+        {# Formulaire pour modifier le produit #}
+        {{ form_start(form) }}
+            <div class="mb-3">
+                {{ form_label(form.nom, 'Nom du Produit') }}
+                {{ form_widget(form.nom, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <div class="mb-3">
+                {{ form_label(form.stock, 'Stock du Produit') }}
+                {{ form_widget(form.stock, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <div class="mb-3">
+                {{ form_label(form.prix, 'Prix du Produit') }}
+                {{ form_widget(form.prix, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <div class="mb-3">
+                {{ form_label(form.lesCategories, 'Catégorie') }}
+                {{ form_widget(form.lesCategories, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <button type="submit" class="btn btn-primary">Sauvegarder</button>
+        {{ form_end(form) }}
+
+        <a href="{{ path('produit_list') }}" class="btn btn-secondary mt-3">Retour</a>
+    </div>
+{% endblock %}

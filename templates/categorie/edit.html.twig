@@ -2,14 +2,21 @@
 
 {% extends 'security/base.html.twig' %}
 
-{% block title %}Modifier une catégorie{% endblock %}
+{% block title %}Modifier une Catégorie{% endblock %}
 
 {% block body %}
-    <h1>Modifier la catégorie : {{ categorie.nom }}</h1>
+    <div class="container mt-5">
+        <h1>Modifier la catégorie : {{ categorie.nom }}</h1>
 
-    {# Formulaire pour modifier le nom de la catégorie #}
-    {{ form_start(form) }}
-        {{ form_row(form.nom) }}
-        <button type="submit" class="btn btn-primary">Sauvegarder</button>
-    {{ form_end(form) }}
+        {# Formulaire pour modifier la catégorie #}
+        {{ form_start(form) }}
+            <div class="mb-3">
+                {{ form_label(form.nom, 'Nom de la Catégorie') }}
+                {{ form_widget(form.nom, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <button type="submit" class="btn btn-primary">Sauvegarder</button>
+        {{ form_end(form) }}
+
+        <a href="{{ path('categorie_list') }}" class="btn btn-secondary mt-3">Retour</a>
+    </div>
 {% endblock %}

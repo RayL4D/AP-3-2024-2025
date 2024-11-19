@@ -20,7 +20,7 @@ class Produit
     private ?float $prix = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $quantite = null;
+    private ?string $stock = null;
 
     #[ORM\ManyToOne(targetEntity: Categorie::class)]
     #[ORM\JoinColumn(name: 'categorie_id', referencedColumnName: 'id', nullable: true)]
@@ -55,14 +55,14 @@ class Produit
         return $this;
     }
 
-    public function getQuantite(): ?string
+    public function getStock(): ?string
     {
-        return $this->quantite;
+        return $this->stock;
     }
 
-    public function setQuantite(string $quantite): static
+    public function setStock(string $stock): static
     {
-        $this->quantite = $quantite;
+        $this->stock = $stock;
 
         return $this;
     }

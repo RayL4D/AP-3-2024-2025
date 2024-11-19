@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class CategorieController extends AbstractController
 {
-    #[Route('/categorie', name: 'app_categorie')]
+    #[Route('/admin/categorie/list', name: 'categorie_list')]
     public function index(EntityManagerInterface $entityManager): Response
     {
         // Récupérer toutes les catégories
@@ -26,7 +26,7 @@ class CategorieController extends AbstractController
         ]);
     }
 
-    #[Route('/categorie/{id}/edit', name: 'edit_categorie')]
+    #[Route('/admin/categorie/{id}/edit', name: 'edit_categorie')]
     public function edit(Categorie $categorie, Request $request, EntityManagerInterface $entityManager): Response
     {
         $form = $this->createForm(CategorieFormType::class, $categorie);
@@ -34,7 +34,7 @@ class CategorieController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
-            return $this->redirectToRoute('app_categorie');
+            return $this->redirectToRoute('categorie_list');
         }
 
         return $this->render('categorie/edit.html.twig', [
@@ -43,7 +43,7 @@ class CategorieController extends AbstractController
         ]);
     }
 
-    #[Route('/categorie/{id}/delete', name: 'delete_categorie', methods: ['POST'])]
+    #[Route('/admin/categorie/{id}/delete', name: 'delete_categorie', methods: ['POST'])]
     public function delete(Categorie $categorie, EntityManagerInterface $entityManager): RedirectResponse
     {
         // Supprimer la catégorie de la base de données
@@ -51,7 +51,7 @@ class CategorieController extends AbstractController
         $entityManager->flush();
 
         // Rediriger vers la liste des catégories après la suppression
-        return $this->redirectToRoute('app_categorie');
+        return $this->redirectToRoute('categorie_list');
     }
 
     #[Route('/admin/categorie/creerform', name: 'app_categorie_creer_form')]
@@ -65,7 +65,7 @@ class CategorieController extends AbstractController
             $entityManager->persist($categorie);
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_categorie');
+            return $this->redirectToRoute('categorie_list');
         }
 
         return $this->render('categorie/new.html.twig', [
