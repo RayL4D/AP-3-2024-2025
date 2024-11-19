@@ -9,7 +9,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Produit;
 use App\Entity\Categorie;
-use App\Controller\ProduitController;
 use App\Form\ProduitType;
 use App\Repository\ProduitRepository;
 use App\Repository\CategorieRepository;

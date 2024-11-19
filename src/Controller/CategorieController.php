@@ -9,9 +9,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Entity\Categorie;
-use App\Controller\CategorieController;
 use App\Form\CategorieFormType;
-
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class CategorieController extends AbstractController
 {

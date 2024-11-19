@@ -8,7 +8,6 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\AvisClient;
-use App\Controller\AvisClientController;
 use App\Form\AvisClientType;
 
 class AvisClientController extends AbstractController
