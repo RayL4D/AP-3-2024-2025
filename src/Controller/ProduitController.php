@@ -17,12 +17,15 @@ use App\Repository\CategorieRepository;
 class ProduitController extends AbstractController
 {
     #[Route('/produit', name: 'app_produit')]
-    public function index(): Response
+    public function index(EntityManagerInterface $entityManager): Response
     {
-        return $this->render('produit/index.html.twig', [
-            'controller_name' => 'ProduitController',
+        $produits = $entityManager->getRepository(Produit::class)->findAll();
+
+        return $this->render('produit/list.html.twig', [
+            'produits' => $produits,
         ]);
     }
+
     #[Route('/admin/produit/creerform', name: 'app_produit_creer_form')]
     public function creerform(Request $request, EntityManagerInterface $entityManager): Response
     {
@@ -50,7 +53,7 @@ class ProduitController extends AbstractController
    
             // Redirection vers une autre page après le succès de l'opération
             // Assurez-vous que la route 'task_success' existe
-            return $this->redirectToRoute('task_success');
+            return $this->redirectToRoute('app_produit');
         }
    
         // Affichage du formulaire dans la vue Twig
@@ -58,6 +61,34 @@ class ProduitController extends AbstractController
             // Transmission de la vue du formulaire à la template Twig
             'form' => $form->createView(),
         ]);
+    }
+
+    #[Route('/prosuit/{id}/edit', name: 'edit_produit')]
+    public function edit(Produit $produit, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $form = $this->createForm(ProduitType::class, $produit);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->flush();
+            return $this->redirectToRoute('app_produit');
+        }
+
+        return $this->render('produit/edit.html.twig', [
+            'produits' => $produit,
+            'form' => $form->createView(),
+        ]);
+    }
+
+    #[Route('/produit/{id}/delete', name: 'delete_produit', methods: ['POST'])]
+    public function delete(Produit $produit, EntityManagerInterface $entityManager): RedirectResponse
+    {
+        // Supprimer la catégorie de la base de données
+        $entityManager->remove($produit);
+        $entityManager->flush();
+
+        // Rediriger vers la liste des catégories après la suppression
+        return $this->redirectToRoute('app_produit');
     }
 
     #[Route('/produit/list', name: 'produit_list')]
@@ -73,4 +104,5 @@ public function listProduits(EntityManagerInterface $entityManager, ProduitRepos
         'categories' => $categorie,
     ]);
 }
+
 }

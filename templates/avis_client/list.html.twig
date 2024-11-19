@@ -1,0 +1,27 @@
+{# templates/categorie/index.html.twig #}
+
+{% extends 'security/base.html.twig' %}
+
+{% block title %}Liste des catégories{% endblock %}
+
+{% block body %}
+    <h1>Liste des avis clients</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>commentaire</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for avisclient in avisclient %}
+                <tr>
+                    <td>{{ avisclient.id }}</td>
+                    <td>{{ avisclient.commentaire }}</td>
+
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

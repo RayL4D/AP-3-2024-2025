@@ -2,13 +2,15 @@
 
 namespace App\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Entity\AvisClient;
 use App\Form\AvisClientType;
+use App\Repository\AvisClientRepository;
 
 class AvisClientController extends AbstractController
 {
@@ -54,6 +56,18 @@ class AvisClientController extends AbstractController
         return $this->render('avis_client/new.html.twig', [
             // Transmission de la vue du formulaire à la template Twig
             'form' => $form->createView(),
+        ]);
+    }
+
+    #[Route('/admin/list', name: 'avis_list')]
+    public function listProduits(EntityManagerInterface $entityManager, AvisClientRepository $avisclientRepository): Response
+    {
+        // Récupérer toutes les stations depuis la base de données
+        $avisclient = $avisclientRepository->findAll();
+    
+        // Passer les stations à la vue
+        return $this->render('avis_client/list.html.twig', [
+            'avisclient' => $avisclient,
         ]);
     }
 }

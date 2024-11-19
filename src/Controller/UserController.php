@@ -58,5 +58,4 @@ class UserController extends AbstractController
         return $this->render('user/client/accueil.html.twig');
     }
 
-    
 }
