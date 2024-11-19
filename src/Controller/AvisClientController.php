@@ -60,7 +60,7 @@ class AvisClientController extends AbstractController
         ]);
     }
 
-    #[Route('/client/list', name: 'client_list')]
+    #[Route('/admin/list', name: 'avis_list')]
     public function listProduits(EntityManagerInterface $entityManager, AvisClientRepository $avisclientRepository): Response
     {
         // Récupérer toutes les stations depuis la base de données

@@ -42,10 +42,27 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
         );
     }
 
+    #[Route('/admin/accueil', name: 'admin_accueil')]
+    public function adminAccueil(): Response
+    {
+        return $this->render('user/admin/accueil.html.twig');
+    }
+
+    #[Route('/client/accueil', name: 'client_accueil')]
+    public function clientAccueil(): Response
+    {
+        return $this->render('user/client/accueil.html.twig');
+    }
+
+
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-            return new RedirectResponse($this->urlGenerator->generate('app_login'));
-           
+        $user = $token->getUser();
+        if (in_array('ROLE_ADMIN', $user->getRoles())) {
+            return new RedirectResponse($this->urlGenerator->generate('admin_accueil'));
+        }
+
+        return new RedirectResponse($this->urlGenerator->generate('client_accueil'));
     }
 
     protected function getLoginUrl(Request $request): string

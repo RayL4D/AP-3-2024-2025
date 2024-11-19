@@ -45,5 +45,17 @@ class UserController extends AbstractController
             'user' => $user
         ]);
     }
+
+    #[Route('/admin/accueil', name: 'admin_accueil')]
+    public function adminAccueil(): Response
+    {
+        return $this->render('user/admin/accueil.html.twig');
+    }
+
+    #[Route('/client/accueil', name: 'client_accueil')]
+    public function clientAccueil(): Response
+    {
+        return $this->render('user/client/accueil.html.twig');
+    }
     
 }
