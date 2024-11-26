@@ -10,6 +10,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Entity\Categorie;
 use App\Form\CategorieFormType;
+use App\Repository\CategorieRepository;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class CategorieController extends AbstractController
@@ -70,6 +71,22 @@ class CategorieController extends AbstractController
 
         return $this->render('categorie/new.html.twig', [
             'form' => $form->createView(),
+        ]);
+    }
+
+    #[Route('/categories', name: 'app_categorie_client')]
+    public function showCategories(Request $request, CategorieRepository $categorieRepository): Response
+    {
+        // Récupérer le critère de tri depuis la requête (par défaut 'p.nom')
+        $sort = $request->query->get('sort', 'p.nom'); // Par exemple, trier par produit nom
+
+        // Récupérer toutes les catégories avec leurs produits triés
+        $categories = $categorieRepository->findAllWithProduits($sort);
+
+        // Passer les catégories et leurs produits à la vue
+        return $this->render('categorie/show.html.twig', [
+            'categories' => $categories,
+            'sort' => $sort,  // Passer le critère de tri pour le conserver dans l'URL
         ]);
     }
 }
