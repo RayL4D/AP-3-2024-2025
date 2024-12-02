@@ -173,4 +173,26 @@ class APIController extends AbstractController
 
         return new JsonResponse(['status' => 'Catégorie supprimée avec succès']);
     }
+
+    #[Route('/api/categories/{id}', name: 'api_update_category', methods: ['PUT'])]
+    public function updateCategory(int $id, Request $request, CategorieRepository $categorieRepository, EntityManagerInterface $entityManager): JsonResponse
+    {
+       $categorie = $entityManager->getRepository(Categorie::class)->find($id);
+
+        if (!$categorie) {
+            return new JsonResponse(['status' => 'Produit non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data['nom'])) {
+            $categorie->setNom($data['nom']);
+        }
+
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Produit mis à jour avec succès']);
+    }
+    
+
 }
