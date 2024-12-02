@@ -1,149 +1,155 @@
 <template>
-    <div>
-      <Navbar />
-      <div class="categorie-app">
-        <h1>Gestion des Catégories</h1>
-        <form @submit.prevent="saveCategorie">
-          <input v-model="currentCategorie.nom" placeholder="Nom de la catégorie" required>
-          <div class="button-group">
-            <button type="submit" class="btn btn-success">{{ isEditing ? 'Mettre à jour' : 'Ajouter' }}</button>
-            <button type="button" class="btn btn-secondary" @click="cancelEdit" v-if="isEditing">Annuler</button>
-          </div>
-        </form>
-  
-        <div class="table-container">
-          <div class="table-header">
-            <div>ID</div>
-            <div>Nom</div>
-            <div>Actions</div>
-          </div>
-          <div class="table-row" v-for="categorie in categories" :key="categorie.id">
-            <div>{{ categorie.id }}</div>
-            <div>{{ categorie.nom }}</div>
-            <div>
-              <button @click="editCategorie(categorie)" class="btn btn-primary">Modifier</button>
-              <button @click="deleteCategorie(categorie.id)" class="btn btn-danger">Supprimer</button>
-            </div>
+  <div>
+    <Navbar />
+    <div class="categorie-app">
+      <h1>Gestion des Catégories</h1>
+      <form @submit.prevent="saveCategorie">
+        <input v-model="currentCategorie.nom" placeholder="Nom de la catégorie" required>
+        <div class="button-group">
+          <button type="submit" class="btn btn-success">{{ isEditing ? 'Mettre à jour' : 'Ajouter' }}</button>
+          <button type="button" class="btn btn-secondary" @click="cancelEdit" v-if="isEditing">Annuler</button>
+        </div>
+      </form>
+
+      <div class="table-container">
+        <div class="table-header">
+          <div>ID</div>
+          <div>Nom</div>
+          <div>Actions</div>
+        </div>
+        <div class="table-row" v-for="categorie in categories" :key="categorie.id">
+          <div>{{ categorie.id }}</div>
+          <div>{{ categorie.nom }}</div>
+          <div>
+            <button @click="editCategorie(categorie)" class="btn btn-primary">Modifier</button>
+            <button @click="deleteCategorie(categorie.id)" class="btn btn-danger">Supprimer</button>
           </div>
         </div>
       </div>
     </div>
-  </template>
+  </div>
+</template>
+
   
   <script>
-  import { ref, onMounted } from 'vue';
-  import Navbar from './NavbarAdmin.vue';
-  
-  export default {
-    name: 'CategorieApp',
-    components: {
-      Navbar,
-    },
-    setup() {
-      const categories = ref([]);
-      const currentCategorie = ref({
+import { ref, onMounted } from 'vue';
+import Navbar from './NavbarAdmin.vue';
+
+export default {
+  name: 'CategorieApp',
+  components: {
+    Navbar,
+  },
+  setup() {
+    const categories = ref([]);
+    const currentCategorie = ref({
+      id: null,
+      nom: '',
+    });
+
+    const isEditing = ref(false);
+    const errorMessage = ref('');
+
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) {
+          throw new Error('Erreur lors du chargement des catégories');
+        }
+        categories.value = await response.json();
+      } catch (error) {
+        console.error(error);
+        errorMessage.value = error.message;
+      }
+    };
+
+    const saveCategorie = async () => {
+      try {
+        let response;
+        if (currentCategorie.value.id) {
+          response = await fetch(`/api/categories/update/${currentCategorie.value.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(currentCategorie.value),
+          });
+
+          if (!response.ok) {
+            throw new Error('Erreur lors de la mise à jour de la catégorie');
+          }
+        } else {
+          response = await fetch('/api/categories/add', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(currentCategorie.value),
+          });
+
+          if (!response.ok) {
+            throw new Error('Erreur lors de l\'ajout de la catégorie');
+          }
+        }
+
+        await fetchCategories();
+        resetForm();
+      } catch (error) {
+        console.error(error);
+        errorMessage.value = error.message;
+      }
+    };
+
+    const deleteCategorie = async (id) => {
+      try {
+        const response = await fetch(`/api/categories/delete/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur lors de la suppression de la catégorie');
+        }
+
+        await fetchCategories();
+      } catch (error) {
+        console.error(error);
+        errorMessage.value = error.message;
+      }
+    };
+
+    const editCategorie = (categorie) => {
+      currentCategorie.value = { ...categorie };
+      isEditing.value = true;
+    };
+
+    const resetForm = () => {
+      currentCategorie.value = {
         id: null,
         nom: '',
-      });
-  
-      const isEditing = ref(false);
-  
-      const fetchCategories = async () => {
-        try {
-          const response = await fetch('/api/categories');
-          if (!response.ok) {
-            throw new Error('Erreur lors du chargement des catégories');
-          }
-          categories.value = await response.json();
-        } catch (error) {
-          console.error(error);
-        }
       };
-  
-      const saveCategorie = async () => {
-        try {
-          let response;
-          if (currentCategorie.value.id) {
-            response = await fetch(`/api/categories/update/${currentCategorie.value.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(currentCategorie.value),
-            });
-  
-            if (!response.ok) {
-              throw new Error('Erreur lors de la mise à jour de la catégorie');
-            }
-          } else {
-            response = await fetch('/api/categories/add', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(currentCategorie.value),
-            });
-  
-            if (!response.ok) {
-              throw new Error('Erreur lors de l\'ajout de la catégorie');
-            }
-          }
-  
-          await fetchCategories();
-          resetForm();
-        } catch (error) {
-          console.error(error);
-        }
-      };
-  
-      const deleteCategorie = async (id) => {
-        try {
-          const response = await fetch(`/api/categories/delete/${id}`, {
-            method: 'DELETE',
-          });
-  
-          if (!response.ok) {
-            throw new Error('Erreur lors de la suppression de la catégorie');
-          }
-  
-          await fetchCategories();
-        } catch (error) {
-          console.error(error);
-        }
-      };
-  
-      const editCategorie = (categorie) => {
-        currentCategorie.value = { ...categorie };
-        isEditing.value = true;
-      };
-  
-      const resetForm = () => {
-        currentCategorie.value = {
-          id: null,
-          nom: '',
-        };
-        isEditing.value = false;
-      };
-  
-      const cancelEdit = () => {
-        resetForm();
-      };
-  
-      onMounted(() => {
-        fetchCategories();
-      });
-  
-      return {
-        categories,
-        currentCategorie,
-        isEditing,
-        saveCategorie,
-        deleteCategorie,
-        editCategorie,
-        cancelEdit,
-      };
-    },
-  };
+      isEditing.value = false;
+    };
+
+    const cancelEdit = () => {
+      resetForm();
+    };
+
+    onMounted(() => {
+      fetchCategories();
+    });
+
+    return {
+      categories,
+      currentCategorie,
+      isEditing,
+      errorMessage,
+      saveCategorie,
+      deleteCategorie,
+      editCategorie,
+      cancelEdit,
+    };
+  },
+};
   </script>
   
   <style scoped>
