@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Categorie;
 use App\Entity\Produit;
+use App\Entity\Stock;
 use App\Repository\CategorieRepository;
 use App\Repository\ProduitRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -33,6 +34,7 @@ class APIController extends AbstractController
                 'nom' => $produit->getNom(),
                 'prix' => $produit->getPrix(),
                 'categorie_id' => $produit->getLaCategorie() ? $produit->getLaCategorie()->getId() : null,
+                'quantiteStock' => $produit->getLeStock() ? $produit->getLeStock()->getQuantiteStock() : null,
             ];
         }, $produits);
 
@@ -44,7 +46,7 @@ class APIController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (!isset($data['nom'], $data['prix'], $data['categorie_id'])) {
+        if (!isset($data['nom'], $data['prix'], $data['categorie_id'], $data['quantiteStock'])) {
             return new JsonResponse(['status' => 'Invalid data'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
@@ -57,6 +59,10 @@ class APIController extends AbstractController
         $produit->setNom($data['nom']);
         $produit->setPrix($data['prix']);
         $produit->setLaCategorie($categorie);
+
+        $stock = new Stock();
+        $stock->setQuantiteStock($data['quantiteStock']);
+        $produit->setLeStock($stock);
 
         $entityManager->persist($produit);
         $entityManager->flush();
@@ -88,6 +94,10 @@ class APIController extends AbstractController
             if ($categorie) {
                 $produit->setLaCategorie($categorie);
             }
+        }
+
+        if (isset($data['quantiteStock'])) {
+            $produit->getLeStock()->setQuantiteStock($data['quantiteStock']);
         }
 
         $entityManager->flush();

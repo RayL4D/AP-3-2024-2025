@@ -6,6 +6,7 @@
       <form @submit.prevent="saveProduct">
         <input v-model="currentProduct.nom" placeholder="Nom du produit" required>
         <input v-model.number="currentProduct.prix" placeholder="Prix" required>
+        <input v-model.number="currentProduct.quantiteStock" placeholder="Quantité en stock" required>
         <select v-model="currentProduct.categorieId" required>
           <option disabled value="">Sélectionnez une catégorie</option>
           <option v-for="categorie in categories" :key="categorie.id" :value="categorie.id">
@@ -23,6 +24,7 @@
           <div>ID</div>
           <div>Nom</div>
           <div>Prix</div>
+          <div>Quantité en stock</div>
           <div>Catégorie</div>
           <div>Actions</div>
         </div>
@@ -30,6 +32,7 @@
           <div>{{ produit.id }}</div>
           <div>{{ produit.nom }}</div>
           <div>{{ produit.prix }}</div>
+          <div>{{ produit.quantiteStock }}</div>
           <div>{{ getCategorieName(produit.categorie_id) }}</div>
           <div>
             <button @click="editProduct(produit)" class="btn btn-primary">Modifier</button>
@@ -57,6 +60,7 @@ export default {
       id: null,
       nom: '',
       prix: 0,
+      quantiteStock: 0,
       categorieId: null,
     });
     const isEditing = ref(false);
@@ -100,6 +104,7 @@ export default {
             body: JSON.stringify({
               nom: currentProduct.value.nom,
               prix: currentProduct.value.prix,
+              quantiteStock: currentProduct.value.quantiteStock,
               categorie_id: currentProduct.value.categorieId
             }),
           });
@@ -116,6 +121,7 @@ export default {
             body: JSON.stringify({
               nom: currentProduct.value.nom,
               prix: currentProduct.value.prix,
+              quantiteStock: currentProduct.value.quantiteStock,
               categorie_id: currentProduct.value.categorieId
             }),
           });
@@ -155,6 +161,7 @@ export default {
         id: produit.id,
         nom: produit.nom,
         prix: produit.prix,
+        quantiteStock: produit.quantiteStock,
         categorieId: produit.categorie_id
       };
       isEditing.value = true;
@@ -165,6 +172,7 @@ export default {
         id: null,
         nom: '',
         prix: 0,
+        quantiteStock: 0,
         categorieId: null,
       };
       isEditing.value = false;
@@ -199,9 +207,6 @@ export default {
   },
 };
 </script>
-
-
-
 
 <style scoped>
 .produits-app {
@@ -283,7 +288,7 @@ button {
 
 .table-container {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
 }
 
