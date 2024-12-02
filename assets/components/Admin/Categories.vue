@@ -109,7 +109,7 @@ export default {
     // Fonction pour supprimer une catégorie
     const deleteCategorie = async (id) => {
       try {
-        const response = await fetch(`/api/categories/${id}`, {
+        const response = await fetch(`/api/categories/delete/${id}`, {
           method: 'DELETE', // Suppression via DELETE
         });
 
