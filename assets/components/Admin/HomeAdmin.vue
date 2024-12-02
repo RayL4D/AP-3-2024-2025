@@ -12,7 +12,7 @@
   </template>
   
   <script>
-  import Navbar from "../Navbar.vue";
+  import Navbar from "./NavbarAdmin.vue";
   
   export default {
     name: "AdminHome",

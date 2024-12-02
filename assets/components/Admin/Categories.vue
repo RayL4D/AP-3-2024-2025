@@ -32,7 +32,7 @@
   
   <script>
   import { ref, onMounted } from 'vue';
-  import Navbar from '../Navbar.vue';
+  import Navbar from './NavbarAdmin.vue';
   
   export default {
     name: 'CategorieApp',

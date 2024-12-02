@@ -104,16 +104,34 @@ class APIController extends AbstractController
         return new JsonResponse(['status' => 'Produit supprimé avec succès']);
     }
 
-    // Récupère la liste des catégories
-    #[Route('/api/categories', name: 'api_categories', methods: ['GET'])]
-    public function getCategories(Request $request, CategorieRepository $categorieRepository): JsonResponse
-    {
-        // Récupère toutes les catégories de la base de données
-        $categories = $categorieRepository->findAll();
-        $response = new Utils();
-        // Renvoie les catégories sous forme de réponse JSON
-        return $response->GetJsonResponse($request, $categories);
+
+// Récupère la liste des catégories avec les produits
+#[Route('/api/categories', name: 'api_categories', methods: ['GET'])]
+public function getCategories(CategorieRepository $categorieRepository): JsonResponse
+{
+    // Récupère toutes les catégories de la base de données
+    $categories = $categorieRepository->findAll();
+    $data = [];
+
+    foreach ($categories as $categorie) {
+        $products = [];
+        foreach ($categorie->getLesProduits() as $produit) {
+            $products[] = [
+                'id' => $produit->getId(),
+                'nom' => $produit->getNom(),
+                'prix' => $produit->getPrix()
+            ];
+        }
+
+        $data[] = [
+            'id' => $categorie->getId(),
+            'nom' => $categorie->getNom(),
+            'produits' => $products
+        ];
     }
+
+    return new JsonResponse($data);
+}
 
     // Ajoute une nouvelle catégorie
     #[Route('/api/categories/add', name: 'app_api_add_categorie', methods: ['POST'])]
