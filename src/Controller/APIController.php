@@ -37,26 +37,39 @@ class APIController extends AbstractController
     }
 
     // Ajoute un nouveau produit
-    #[Route('/api/produits/add', name: 'app_api_add_produit', methods: ['POST'])]
-    public function addProduit(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/api/produits', name: 'ajouter_produit', methods: ['POST'])]
+    public function ajouterProduit(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-
-        // Création d'une nouvelle entité produit
+    
+        $nomProduit = $data['nom'] ?? null;
+        $categorieId = $data['categorieId'] ?? null;
+    
+        if (!$nomProduit || !$categorieId) {
+            return new JsonResponse(['error' => 'Données invalides'], 400);
+        }
+    
+        // Chercher la catégorie par son ID
+        $categorie = $em->getRepository(Categorie::class)->find($categorieId);
+        if (!$categorie) {
+            return new JsonResponse(['error' => 'Catégorie introuvable'], 404);
+        }
+    
+        // Créer un nouveau produit
         $produit = new Produit();
-        $produit->setNom($data['nom']);
-        $produit->setPrix($data['prix']);
-        // Récupère et définit la catégorie associée au produit
-        $produit->setLaCategorie($data['categorie']);
-
-        // Persist et sauvegarde le produit dans la base de données
-        $entityManager->persist($produit);
-        $entityManager->flush();
-
-        // Renvoie une réponse JSON indiquant que le produit a été ajouté avec succès
-        return new JsonResponse(['status' => 'Produit ajouté avec succès'], JsonResponse::HTTP_CREATED);
+        $produit->setNom($nomProduit);
+        $produit->setPrix($data['prix']);  // N'oubliez pas de définir le prix
+        $produit->setLaCategorie($categorie);
+    
+        $em->persist($produit);
+        $em->flush();
+    
+        return new JsonResponse(['message' => 'Produit ajouté avec succès'], JsonResponse::HTTP_CREATED);
     }
-
+    
+    
+    
+    
     // Met à jour un produit existant
     #[Route('/api/produits/update/{id}', name: 'app_api_update_produit', methods: ['PUT'])]
     public function updateProduit(Request $request, $id, EntityManagerInterface $entityManager): JsonResponse

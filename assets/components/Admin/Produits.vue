@@ -4,9 +4,8 @@
     <div class="produits-app">
       <h1>Gestion des Produits</h1>
       <form @submit.prevent="saveProduct">
-        <input v-model="currentProduct.nom" placeholder="Nom du produit" required>
-        <input v-model.number="currentProduct.prix" placeholder="Prix" required>
-        <!-- Menu déroulant pour les catégories -->
+        <input v-model="currentProduct.nom" placeholder="Nom du produit" required />
+        <input v-model.number="currentProduct.prix" placeholder="Prix" type="number" min="0" required />
         <select v-model="currentProduct.categorieId" required>
           <option disabled value="">Sélectionnez une catégorie</option>
           <option v-for="categorie in categories" :key="categorie.id" :value="categorie.id">
@@ -14,13 +13,11 @@
           </option>
         </select>
         <div class="button-group">
-          <!-- Boutons pour sauvegarder ou annuler -->
           <button type="submit" class="btn btn-success">{{ isEditing ? 'Mettre à jour' : 'Ajouter' }}</button>
           <button type="button" class="btn btn-secondary" @click="cancelEdit" v-if="isEditing">Annuler</button>
         </div>
       </form>
 
-      <!-- Tableau pour afficher les produits -->
       <div class="table-container">
         <div class="table-header">
           <div>ID</div>
@@ -35,7 +32,6 @@
           <div>{{ produit.prix }}</div>
           <div>{{ getCategorieName(produit.categorieId) }}</div>
           <div>
-            <!-- Boutons pour éditer ou supprimer un produit -->
             <button @click="editProduct(produit)" class="btn btn-primary">Modifier</button>
             <button @click="deleteProduct(produit.id)" class="btn btn-danger">Supprimer</button>
           </div>
@@ -50,132 +46,137 @@ import { ref, onMounted } from 'vue';
 import Navbar from '../Navbar.vue';
 
 export default {
-  name: 'ProduitsApp', // Nom du composant
+  name: 'ProduitsApp',
   components: {
-    Navbar, // Composant de la barre de navigation
+    Navbar,
   },
   setup() {
-    // Utilisation de la composition API de Vue 3
-    const produits = ref([]); // Référence pour stocker les produits
+    const produits = ref([]);
+    const categories = ref([]);
     const currentProduct = ref({
       id: null,
-      libelle: '',
-      description: '',
-      prixPlancher: 0,
-    }); // Référence pour stocker le produit courant
+      nom: '',
+      prix: 0,
+      categorieId: '',
+    });
 
-    const isEditing = ref(false); // Référence pour savoir si on est en mode édition
+    const isEditing = ref(false);
 
-    // Fonction pour récupérer les produits
     const fetchProduits = async () => {
       try {
         const response = await fetch('/api/produits');
-        if (!response.ok) {
-          throw new Error('Erreur lors du chargement des produits');
-        }
+        if (!response.ok) throw new Error('Erreur lors du chargement des produits');
         produits.value = await response.json();
       } catch (error) {
         console.error(error);
+        showError('Impossible de charger les produits.');
       }
     };
 
-    // Fonction pour sauvegarder un produit
-    const saveProduct = async () => {
+    const fetchCategories = async () => {
       try {
-        let response;
-        if (currentProduct.value.id) {
-          // Mise à jour du produit existant
-          response = await fetch(`/api/produits/update/${currentProduct.value.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(currentProduct.value),
-          });
-
-          if (!response.ok) {
-            throw new Error('Erreur lors de la mise à jour du produit');
-          }
-        } else {
-          // Ajout d'un nouveau produit
-          response = await fetch('/api/produits/add', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(currentProduct.value),
-          });
-
-          if (!response.ok) {
-            throw new Error('Erreur lors de l\'ajout du produit');
-          }
-        }
-
-        await fetchProduits();
-        resetForm();
+        const response = await fetch('/api/categories');
+        if (!response.ok) throw new Error('Erreur lors du chargement des catégories');
+        categories.value = await response.json();
       } catch (error) {
         console.error(error);
+        showError('Impossible de charger les catégories.');
       }
     };
 
-    // Fonction pour supprimer un produit
+    const saveProduct = async () => {
+  if (!isValidProduct()) {
+    showError('Veuillez remplir tous les champs correctement.');
+    return;
+  }
+
+  try {
+    let response;
+    const url = currentProduct.value.id
+      ? `/api/produits/${currentProduct.value.id}`  // Utilisez l'ID pour la mise à jour
+      : '/api/produits';  // Sinon, pour l'ajout
+
+    response = await fetch(url, {
+      method: currentProduct.value.id ? 'PUT' : 'POST', // PUT si modification, POST si ajout
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentProduct.value),
+    });
+
+    if (!response.ok) throw new Error(currentProduct.value.id ? 'Erreur lors de la mise à jour du produit' : "Erreur lors de l'ajout du produit");
+
+    // Recharger les produits après l'ajout ou la mise à jour
+    await fetchProduits();
+    resetForm();
+  } catch (error) {
+    console.error(error);
+    showError(error.message);
+  }
+};
+
+
+
     const deleteProduct = async (id) => {
       try {
-        const response = await fetch(`/api/produits/delete/${id}`, {
-          method: 'DELETE',
-        });
-
-        if (!response.ok) {
-          throw new Error('Erreur lors de la suppression du produit');
-        }
-
+        const response = await fetch(`/api/produits/delete/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Erreur lors de la suppression du produit');
         await fetchProduits();
       } catch (error) {
         console.error(error);
+        showError('Impossible de supprimer le produit.');
       }
     };
 
-    // Fonction pour éditer un produit
     const editProduct = (produit) => {
-      currentProduct.value = { ...produit }; // Met à jour le produit courant avec les données du produit sélectionné
-      isEditing.value = true; // Active le mode édition
+      currentProduct.value = { ...produit };
+      isEditing.value = true;
     };
 
-    // Fonction pour réinitialiser le formulaire
     const resetForm = () => {
       currentProduct.value = {
         id: null,
-        libelle: '',
-        description: '',
-        prixPlancher: 0,
-      }; // Réinitialise les champs du formulaire
-      isEditing.value = false; // Désactive le mode édition
+        nom: '',
+        prix: 0,
+        categorieId: '',
+      };
+      isEditing.value = false;
     };
 
-    // Fonction pour annuler l'édition
     const cancelEdit = () => {
       resetForm();
     };
 
-    // Lifecycle hook monté - appelé lorsque le composant est monté
+    const getCategorieName = (id) => {
+      const categorie = categories.value.find((c) => c.id === id);
+      return categorie ? categorie.nom : 'Inconnue';
+    };
+
+    const showError = (message) => {
+      alert(message);
+    };
+
+    const isValidProduct = () => {
+      return currentProduct.value.nom.trim() !== '' && currentProduct.value.prix > 0 && currentProduct.value.categorieId;
+    };
+
     onMounted(() => {
-      fetchProduits(); // Récupère les produits initiales
+      fetchProduits();
+      fetchCategories();
     });
 
-    // Retourne les variables et fonctions pour être utilisées dans le template
     return {
       produits,
+      categories,
       currentProduct,
       isEditing,
       saveProduct,
       deleteProduct,
       editProduct,
       cancelEdit,
+      getCategorieName,
     };
   },
 };
 </script>
-
 
 <style scoped>
 .produits-app {
@@ -199,7 +200,8 @@ form {
   margin-bottom: 20px;
 }
 
-input, select {
+input,
+select {
   margin-bottom: 10px;
   padding: 8px;
   border: 1px solid #ddd;
@@ -209,6 +211,7 @@ input, select {
 .button-group {
   display: flex;
   gap: 10px;
+  margin-top: 10px;
 }
 
 button {
@@ -256,28 +259,27 @@ button {
 }
 
 .table-container {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
 }
 
 .table-header,
 .table-row {
-  background-color: #ecf0f1;
-  border-radius: 5px;
-  display: contents;
-  font-weight: bold;
+  display: table-row;
+}
+
+.table-header div,
+.table-row div {
+  display: table-cell;
   text-align: center;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
 }
 
 .table-header {
   background-color: #bdc3c7;
   font-weight: bold;
-}
-
-.table-row div {
-  padding: 0.75rem;
-  transition: background-color 0.3s ease;
 }
 
 .table-row:nth-child(even) div {
@@ -286,13 +288,5 @@ button {
 
 .table-row div:hover {
   background-color: #dfe6e9;
-}
-
-.table-row div {
-  border-right: 1px solid #ddd;
-}
-
-.table-row div:last-child {
-  border-right: none;
 }
 </style>
