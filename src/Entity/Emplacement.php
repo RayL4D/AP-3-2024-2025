@@ -22,6 +22,9 @@ class Emplacement
     #[ORM\OneToOne(mappedBy: 'leEmplacement', cascade: ['persist', 'remove'])]
     private ?Produit $leProduit = null;
 
+    #[ORM\OneToOne(mappedBy: 'leEmplacement', cascade: ['persist', 'remove'])]
+    private ?Categorie $laCategorie = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -69,6 +72,28 @@ class Emplacement
         }
 
         $this->leProduit = $leProduit;
+
+        return $this;
+    }
+
+    public function getLaCategorie(): ?Categorie
+    {
+        return $this->laCategorie;
+    }
+
+    public function setLaCategorie(?Categorie $laCategorie): static
+    {
+        // unset the owning side of the relation if necessary
+        if ($laCategorie === null && $this->laCategorie !== null) {
+            $this->laCategorie->setLeEmplacement(null);
+        }
+
+        // set the owning side of the relation if necessary
+        if ($laCategorie !== null && $laCategorie->getLeEmplacement() !== $this) {
+            $laCategorie->setLeEmplacement($this);
+        }
+
+        $this->laCategorie = $laCategorie;
 
         return $this;
     }

@@ -18,9 +18,6 @@ class Detail
     #[ORM\Column(type: 'integer')]
     private int $quantiteProduit;
 
-    #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
-    private float $prixFinal;
-
     /**
      * Relation ManyToOne avec Produit (Un produit peut être associé à plusieurs détails)
      */
@@ -45,17 +42,6 @@ class Detail
     public function setQuantiteProduit(int $quantiteProduit): self
     {
         $this->quantiteProduit = $quantiteProduit;
-        return $this;
-    }
-
-    public function getPrixFinal(): float
-    {
-        return $this->prixFinal;
-    }
-
-    public function setPrixFinal(float $prixFinal): self
-    {
-        $this->prixFinal = $prixFinal;
         return $this;
     }
 

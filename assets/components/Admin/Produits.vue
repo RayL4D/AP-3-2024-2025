@@ -7,6 +7,7 @@
         <input v-model="currentProduct.nom" placeholder="Nom du produit" required>
         <input v-model.number="currentProduct.prix" placeholder="Prix" required>
         <input v-model.number="currentProduct.quantiteStock" placeholder="Quantité en stock" required>
+        <!-- Les champs pour x et y ne sont pas nécessaires ici, ils sont gérés automatiquement -->
         <select v-model="currentProduct.categorieId" required>
           <option disabled value="">Sélectionnez une catégorie</option>
           <option v-for="categorie in categories" :key="categorie.id" :value="categorie.id">
@@ -25,6 +26,8 @@
           <div>Nom</div>
           <div>Prix</div>
           <div>Quantité en stock</div>
+          <div>Emplacement X</div>
+          <div>Emplacement Y</div>
           <div>Catégorie</div>
           <div>Actions</div>
         </div>
@@ -33,6 +36,8 @@
           <div>{{ produit.nom }}</div>
           <div>{{ produit.prix }}</div>
           <div>{{ produit.quantiteStock }}</div>
+          <div>{{ produit.x }}</div>
+          <div>{{ produit.y }}</div>
           <div>{{ getCategorieName(produit.categorie_id) }}</div>
           <div>
             <button @click="editProduct(produit)" class="btn btn-primary">Modifier</button>
@@ -61,6 +66,8 @@ export default {
       nom: '',
       prix: 0,
       quantiteStock: 0,
+      x: 0,  // Champ géré automatiquement, par défaut à 0
+      y: 0,  // Champ géré automatiquement, par défaut à 0
       categorieId: null,
     });
     const isEditing = ref(false);
@@ -162,6 +169,8 @@ export default {
         nom: produit.nom,
         prix: produit.prix,
         quantiteStock: produit.quantiteStock,
+        x: produit.x,  // Géré automatiquement
+        y: produit.y,  // Géré automatiquement
         categorieId: produit.categorie_id
       };
       isEditing.value = true;
@@ -173,6 +182,8 @@ export default {
         nom: '',
         prix: 0,
         quantiteStock: 0,
+        x: 0,  // Réinitialisé à 0
+        y: 0,  // Réinitialisé à 0
         categorieId: null,
       };
       isEditing.value = false;
@@ -288,7 +299,7 @@ button {
 
 .table-container {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 10px;
 }
 
