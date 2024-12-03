@@ -30,6 +30,17 @@ class Produit
     #[ORM\OneToOne(inversedBy: 'leProduit', cascade: ['persist', 'remove'])]
     private ?Stock $leStock = null;
 
+    /**
+     * @var Collection<int, Detail>
+     */
+    #[ORM\OneToMany(targetEntity: Detail::class, mappedBy: 'leProduit')]
+    private Collection $LesDetails;
+
+    public function __construct()
+    {
+        $this->LesDetails = new ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -91,6 +102,36 @@ class Produit
     public function setLeStock(?Stock $leStock): static
     {
         $this->leStock = $leStock;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Detail>
+     */
+    public function getLesDetails(): Collection
+    {
+        return $this->LesDetails;
+    }
+
+    public function addLesDetail(Detail $lesDetail): static
+    {
+        if (!$this->LesDetails->contains($lesDetail)) {
+            $this->LesDetails->add($lesDetail);
+            $lesDetail->setLeProduit($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLesDetail(Detail $lesDetail): static
+    {
+        if ($this->LesDetails->removeElement($lesDetail)) {
+            // set the owning side to null (unless already changed)
+            if ($lesDetail->getLeProduit() === $this) {
+                $lesDetail->setLeProduit(null);
+            }
+        }
 
         return $this;
     }

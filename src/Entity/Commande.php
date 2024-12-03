@@ -25,14 +25,14 @@ class Commande
     /**
      * @var Collection<int, Detail>
      */
-    #[ORM\ManyToMany(targetEntity: Detail::class, inversedBy: 'lesCommandes')]
+    #[ORM\OneToMany(targetEntity: Detail::class, mappedBy: 'laCommande')]
     private Collection $lesDetails;
 
     public function __construct()
     {
         $this->lesDetails = new ArrayCollection();
     }
-    
+
     public function getId(): ?int
     {
         return $this->id;
@@ -74,6 +74,7 @@ class Commande
     {
         if (!$this->lesDetails->contains($lesDetail)) {
             $this->lesDetails->add($lesDetail);
+            $lesDetail->setLaCommande($this);
         }
 
         return $this;
@@ -81,10 +82,14 @@ class Commande
 
     public function removeLesDetail(Detail $lesDetail): static
     {
-        $this->lesDetails->removeElement($lesDetail);
+        if ($this->lesDetails->removeElement($lesDetail)) {
+            // set the owning side to null (unless already changed)
+            if ($lesDetail->getLaCommande() === $this) {
+                $lesDetail->setLaCommande(null);
+            }
+        }
 
         return $this;
     }
-
 
 }
