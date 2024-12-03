@@ -30,17 +30,6 @@ class Produit
     #[ORM\OneToOne(inversedBy: 'leProduit', cascade: ['persist', 'remove'])]
     private ?Stock $leStock = null;
 
-    /**
-     * @var Collection<int, Detail>
-     */
-    #[ORM\ManyToMany(targetEntity: Detail::class, mappedBy: 'lesProduits')]
-    private Collection $lesDetails;
-
-    public function __construct()
-    {
-        $this->lesDetails = new ArrayCollection();
-    }
-
     public function getId(): ?int
     {
         return $this->id;
@@ -102,33 +91,6 @@ class Produit
     public function setLeStock(?Stock $leStock): static
     {
         $this->leStock = $leStock;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Detail>
-     */
-    public function getLesDetails(): Collection
-    {
-        return $this->lesDetails;
-    }
-
-    public function addLesDetail(Detail $lesDetail): static
-    {
-        if (!$this->lesDetails->contains($lesDetail)) {
-            $this->lesDetails->add($lesDetail);
-            $lesDetail->addLesProduit($this);
-        }
-
-        return $this;
-    }
-
-    public function removeLesDetail(Detail $lesDetail): static
-    {
-        if ($this->lesDetails->removeElement($lesDetail)) {
-            $lesDetail->removeLesProduit($this);
-        }
 
         return $this;
     }
