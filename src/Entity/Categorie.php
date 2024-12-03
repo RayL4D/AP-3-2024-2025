@@ -24,6 +24,9 @@ class Categorie
     #[ORM\OneToMany(targetEntity: Produit::class, mappedBy: 'laCategorie')]
     private Collection $lesProduits;
 
+    #[ORM\OneToOne(inversedBy: 'laCategorie', cascade: ['persist', 'remove'])]
+    private ?Emplacement $leEmplacement = null;
+
     public function __construct()
     {
         $this->lesProduits = new ArrayCollection();
@@ -72,6 +75,18 @@ class Categorie
                 $lesProduit->setLaCategorie(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getLeEmplacement(): ?Emplacement
+    {
+        return $this->leEmplacement;
+    }
+
+    public function setLeEmplacement(?Emplacement $leEmplacement): static
+    {
+        $this->leEmplacement = $leEmplacement;
 
         return $this;
     }
