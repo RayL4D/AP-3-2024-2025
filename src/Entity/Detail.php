@@ -18,8 +18,6 @@ class Detail
     #[ORM\Column]
     private ?int $quantiteProduit = null;
 
-    #[ORM\Column]
-    private ?float $prixFinal = null;
 
     /**
      * @var Collection<int, Produit>
@@ -56,17 +54,6 @@ class Detail
         return $this;
     }
 
-    public function getPrixFinal(): ?float
-    {
-        return $this->prixFinal;
-    }
-
-    public function setPrixFinal(float $prixFinal): static
-    {
-        $this->prixFinal = $prixFinal;
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, Produit>

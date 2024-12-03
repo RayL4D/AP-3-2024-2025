@@ -6,7 +6,8 @@
       <form @submit.prevent="saveProduct">
         <input v-model="currentProduct.nom" placeholder="Nom du produit" required>
         <input v-model.number="currentProduct.prix" placeholder="Prix" required>
-        <!-- Menu déroulant pour les catégories -->
+        <input v-model.number="currentProduct.quantiteStock" placeholder="Quantité en stock" required>
+        <!-- Les champs pour x et y ne sont pas nécessaires ici, ils sont gérés automatiquement -->
         <select v-model="currentProduct.categorieId" required>
           <option disabled value="">Sélectionnez une catégorie</option>
           <option v-for="categorie in categories" :key="categorie.id" :value="categorie.id">
@@ -14,18 +15,19 @@
           </option>
         </select>
         <div class="button-group">
-          <!-- Boutons pour sauvegarder ou annuler -->
           <button type="submit" class="btn btn-success">{{ isEditing ? 'Mettre à jour' : 'Ajouter' }}</button>
           <button type="button" class="btn btn-secondary" @click="cancelEdit" v-if="isEditing">Annuler</button>
         </div>
       </form>
 
-      <!-- Tableau pour afficher les produits -->
       <div class="table-container">
         <div class="table-header">
           <div>ID</div>
           <div>Nom</div>
           <div>Prix</div>
+          <div>Quantité en stock</div>
+          <div>Emplacement X</div>
+          <div>Emplacement Y</div>
           <div>Catégorie</div>
           <div>Actions</div>
         </div>
@@ -33,9 +35,11 @@
           <div>{{ produit.id }}</div>
           <div>{{ produit.nom }}</div>
           <div>{{ produit.prix }}</div>
-          <div>{{ getCategorieName(produit.categorieId) }}</div>
+          <div>{{ produit.quantiteStock }}</div>
+          <div>{{ produit.x }}</div>
+          <div>{{ produit.y }}</div>
+          <div>{{ getCategorieName(produit.categorie_id) }}</div>
           <div>
-            <!-- Boutons pour éditer ou supprimer un produit -->
             <button @click="editProduct(produit)" class="btn btn-primary">Modifier</button>
             <button @click="deleteProduct(produit.id)" class="btn btn-danger">Supprimer</button>
           </div>
@@ -50,23 +54,25 @@ import { ref, onMounted } from 'vue';
 import Navbar from './NavbarAdmin.vue';
 
 export default {
-  name: 'ProduitsApp', // Nom du composant
+  name: 'ProduitsApp',
   components: {
-    Navbar, // Composant de la barre de navigation
+    Navbar,
   },
   setup() {
-    // Utilisation de la composition API de Vue 3
-    const produits = ref([]); // Référence pour stocker les produits
+    const produits = ref([]);
+    const categories = ref([]);
     const currentProduct = ref({
       id: null,
-      libelle: '',
-      description: '',
-      prixPlancher: 0,
-    }); // Référence pour stocker le produit courant
+      nom: '',
+      prix: 0,
+      quantiteStock: 0,
+      x: 0,  // Champ géré automatiquement, par défaut à 0
+      y: 0,  // Champ géré automatiquement, par défaut à 0
+      categorieId: null,
+    });
+    const isEditing = ref(false);
+    const errorMessage = ref('');
 
-    const isEditing = ref(false); // Référence pour savoir si on est en mode édition
-
-    // Fonction pour récupérer les produits
     const fetchProduits = async () => {
       try {
         const response = await fetch('/api/produits');
@@ -76,34 +82,55 @@ export default {
         produits.value = await response.json();
       } catch (error) {
         console.error(error);
+        errorMessage.value = error.message;
       }
     };
 
-    // Fonction pour sauvegarder un produit
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) {
+          throw new Error('Erreur lors du chargement des catégories');
+        }
+        categories.value = await response.json();
+      } catch (error) {
+        console.error(error);
+        errorMessage.value = error.message;
+      }
+    };
+
     const saveProduct = async () => {
       try {
         let response;
         if (currentProduct.value.id) {
-          // Mise à jour du produit existant
           response = await fetch(`/api/produits/update/${currentProduct.value.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(currentProduct.value),
+            body: JSON.stringify({
+              nom: currentProduct.value.nom,
+              prix: currentProduct.value.prix,
+              quantiteStock: currentProduct.value.quantiteStock,
+              categorie_id: currentProduct.value.categorieId
+            }),
           });
 
           if (!response.ok) {
             throw new Error('Erreur lors de la mise à jour du produit');
           }
         } else {
-          // Ajout d'un nouveau produit
           response = await fetch('/api/produits/add', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(currentProduct.value),
+            body: JSON.stringify({
+              nom: currentProduct.value.nom,
+              prix: currentProduct.value.prix,
+              quantiteStock: currentProduct.value.quantiteStock,
+              categorie_id: currentProduct.value.categorieId
+            }),
           });
 
           if (!response.ok) {
@@ -115,10 +142,10 @@ export default {
         resetForm();
       } catch (error) {
         console.error(error);
+        errorMessage.value = error.message;
       }
     };
 
-    // Fonction pour supprimer un produit
     const deleteProduct = async (id) => {
       try {
         const response = await fetch(`/api/produits/delete/${id}`, {
@@ -132,50 +159,65 @@ export default {
         await fetchProduits();
       } catch (error) {
         console.error(error);
+        errorMessage.value = error.message;
       }
     };
 
-    // Fonction pour éditer un produit
     const editProduct = (produit) => {
-      currentProduct.value = { ...produit }; // Met à jour le produit courant avec les données du produit sélectionné
-      isEditing.value = true; // Active le mode édition
+      currentProduct.value = {
+        id: produit.id,
+        nom: produit.nom,
+        prix: produit.prix,
+        quantiteStock: produit.quantiteStock,
+        x: produit.x,  // Géré automatiquement
+        y: produit.y,  // Géré automatiquement
+        categorieId: produit.categorie_id
+      };
+      isEditing.value = true;
     };
 
-    // Fonction pour réinitialiser le formulaire
     const resetForm = () => {
       currentProduct.value = {
         id: null,
-        libelle: '',
-        description: '',
-        prixPlancher: 0,
-      }; // Réinitialise les champs du formulaire
-      isEditing.value = false; // Désactive le mode édition
+        nom: '',
+        prix: 0,
+        quantiteStock: 0,
+        x: 0,  // Réinitialisé à 0
+        y: 0,  // Réinitialisé à 0
+        categorieId: null,
+      };
+      isEditing.value = false;
     };
 
-    // Fonction pour annuler l'édition
     const cancelEdit = () => {
       resetForm();
     };
 
-    // Lifecycle hook monté - appelé lorsque le composant est monté
+    const getCategorieName = (categorieId) => {
+      const categorie = categories.value.find(cat => cat.id === categorieId);
+      return categorie ? categorie.nom : 'Catégorie non trouvée';
+    };
+
     onMounted(() => {
-      fetchProduits(); // Récupère les produits initiales
+      fetchProduits();
+      fetchCategories();
     });
 
-    // Retourne les variables et fonctions pour être utilisées dans le template
     return {
       produits,
+      categories,
       currentProduct,
       isEditing,
+      errorMessage,
       saveProduct,
       deleteProduct,
       editProduct,
       cancelEdit,
+      getCategorieName,
     };
   },
 };
 </script>
-
 
 <style scoped>
 .produits-app {
@@ -257,7 +299,7 @@ button {
 
 .table-container {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 10px;
 }
 
