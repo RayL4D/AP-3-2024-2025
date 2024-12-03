@@ -51,6 +51,7 @@ export default {
     const isEditing = ref(false);
     const errorMessage = ref('');
 
+    // Fonction pour récupérer les catégories
     const fetchCategories = async () => {
       try {
         const response = await fetch('/api/categories');
@@ -64,65 +65,74 @@ export default {
       }
     };
 
+    // Fonction pour enregistrer une catégorie (ajout ou mise à jour)
     const saveCategorie = async () => {
-      try {
-        let response;
-        if (currentCategorie.value.id) {
-          response = await fetch(`/api/categories/update/${currentCategorie.value.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(currentCategorie.value),
-          });
+  try {
+    let response;
+    // Si une catégorie est en mode édition (ID défini), c'est une mise à jour
+    if (currentCategorie.value.id) {
+      // Envoi de la requête PUT pour mettre à jour le nom de la catégorie
+      response = await fetch(`/api/categories/${currentCategorie.value.id}`, {
+        method: 'PUT', // Méthode PUT pour la mise à jour
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nom: currentCategorie.value.nom }), // Envoi du nouveau nom de la catégorie
+      });
 
-          if (!response.ok) {
-            throw new Error('Erreur lors de la mise à jour de la catégorie');
-          }
-        } else {
-          response = await fetch('/api/categories/add', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(currentCategorie.value),
-          });
-
-          if (!response.ok) {
-            throw new Error('Erreur lors de l\'ajout de la catégorie');
-          }
-        }
-
-        await fetchCategories();
-        resetForm();
-      } catch (error) {
-        console.error(error);
-        errorMessage.value = error.message;
+      if (!response.ok) {
+        throw new Error('Erreur lors de la mise à jour de la catégorie');
       }
-    };
+    } else {
+      // Si pas d'ID, c'est une nouvelle catégorie (ajout)
+      response = await fetch('/api/categories', {
+        method: 'POST', // Méthode POST pour l'ajout
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(currentCategorie.value),
+      });
 
+      if (!response.ok) {
+        throw new Error('Erreur lors de l\'ajout de la catégorie');
+      }
+    }
+
+    // Rafraîchir la liste des catégories après la mise à jour
+    await fetchCategories();
+    resetForm(); // Réinitialiser le formulaire
+  } catch (error) {
+    console.error(error);
+    errorMessage.value = error.message;
+  }
+};
+
+
+    // Fonction pour supprimer une catégorie
     const deleteCategorie = async (id) => {
       try {
         const response = await fetch(`/api/categories/delete/${id}`, {
-          method: 'DELETE',
+          method: 'DELETE', // Suppression via DELETE
         });
 
         if (!response.ok) {
           throw new Error('Erreur lors de la suppression de la catégorie');
         }
 
-        await fetchCategories();
+        await fetchCategories(); // Rafraîchir la liste des catégories
       } catch (error) {
         console.error(error);
         errorMessage.value = error.message;
       }
     };
 
+    // Fonction pour activer l'édition d'une catégorie
     const editCategorie = (categorie) => {
-      currentCategorie.value = { ...categorie };
-      isEditing.value = true;
+      currentCategorie.value = { ...categorie }; // Copier les données de la catégorie à éditer
+      isEditing.value = true; // Passer en mode édition
     };
 
+    // Réinitialiser le formulaire
     const resetForm = () => {
       currentCategorie.value = {
         id: null,
@@ -132,10 +142,12 @@ export default {
       isEditing.value = false;
     };
 
+    // Annuler l'édition
     const cancelEdit = () => {
       resetForm();
     };
 
+    // Récupérer les catégories à l'initialisation du composant
     onMounted(() => {
       fetchCategories();
     });
@@ -153,6 +165,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 .categorie-app {
@@ -273,3 +286,4 @@ button {
   border-right: none;
 }
 </style>
+

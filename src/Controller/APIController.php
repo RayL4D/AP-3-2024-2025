@@ -202,6 +202,4 @@ class APIController extends AbstractController
     
         return new JsonResponse(['status' => 'Catégorie supprimée avec succès']);
     }
-    
-
-}    
+}
