@@ -85,7 +85,7 @@ export default {
       }
     } else {
       // Si pas d'ID, c'est une nouvelle catégorie (ajout)
-      response = await fetch('/api/categories', {
+      response = await fetch('/api/categories/add', {
         method: 'POST', // Méthode POST pour l'ajout
         headers: {
           'Content-Type': 'application/json',
