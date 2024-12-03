@@ -13,72 +13,63 @@ class Commande
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?\DateTimeInterface $date = null;
+    #[ORM\Column(type: 'datetime')]
+    private \DateTime $date;
 
-    #[ORM\Column(length: 255)]
-    private ?string $statut = null;
+    #[ORM\Column(type: 'string', length: 255)]
+    private string $statut;
 
-    /**
-     * @var Collection<int, Detail>
-     */
-    #[ORM\ManyToMany(targetEntity: Detail::class, inversedBy: 'lesCommandes')]
-    private Collection $lesDetails;
+    #[ORM\OneToMany(targetEntity: Detail::class, mappedBy: 'commande', cascade: ['persist', 'remove'])]
+    private Collection $details;
 
     public function __construct()
     {
-        $this->lesDetails = new ArrayCollection();
+        $this->details = new ArrayCollection();
     }
-    
+
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getDate(): ?\DateTimeInterface
+    public function getDate(): \DateTime
     {
         return $this->date;
     }
 
-    public function setDate(\DateTimeInterface $date): static
+    public function setDate(\DateTime $date): self
     {
         $this->date = $date;
-
         return $this;
     }
 
-    public function getStatut(): ?string
+    public function getStatut(): string
     {
         return $this->statut;
     }
 
-    public function setStatut(string $statut): static
+    public function setStatut(string $statut): self
     {
         $this->statut = $statut;
-
         return $this;
     }
 
-    /**
-     * @return Collection<int, Detail>
-     */
-    public function getLesDetails(): Collection
+    public function getDetails(): Collection
     {
-        return $this->lesDetails;
+        return $this->details;
     }
 
-    public function addLesDetail(Detail $lesDetail): static
+    public function addLesDetail(Detail $detail): self
     {
-        if (!$this->lesDetails->contains($lesDetail)) {
-            $this->lesDetails->add($lesDetail);
+        if (!$this->details->contains($detail)) {
+            $this->details[] = $detail;
+            $detail->setCommande($this);
         }
-
         return $this;
     }
-
     public function removeLesDetail(Detail $lesDetail): static
     {
         $this->lesDetails->removeElement($lesDetail);

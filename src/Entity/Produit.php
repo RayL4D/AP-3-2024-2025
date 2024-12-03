@@ -33,7 +33,7 @@ class Produit
     /**
      * @var Collection<int, Detail>
      */
-    #[ORM\ManyToMany(targetEntity: Detail::class, mappedBy: 'lesProduits')]
+    #[ORM\OneToMany(mappedBy: 'produit', targetEntity: Detail::class)]
     private Collection $lesDetails;
 
     public function __construct()
@@ -54,7 +54,6 @@ class Produit
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
-
         return $this;
     }
 
@@ -66,7 +65,6 @@ class Produit
     public function setPrix(float $prix): static
     {
         $this->prix = $prix;
-
         return $this;
     }
 
@@ -78,7 +76,6 @@ class Produit
     public function setLaCategorie(?Categorie $laCategorie): static
     {
         $this->laCategorie = $laCategorie;
-
         return $this;
     }
 
@@ -90,7 +87,6 @@ class Produit
     public function setLeEmplacement(?Emplacement $leEmplacement): static
     {
         $this->leEmplacement = $leEmplacement;
-
         return $this;
     }
 
@@ -102,7 +98,6 @@ class Produit
     public function setLeStock(?Stock $leStock): static
     {
         $this->leStock = $leStock;
-
         return $this;
     }
 
@@ -118,7 +113,7 @@ class Produit
     {
         if (!$this->lesDetails->contains($lesDetail)) {
             $this->lesDetails->add($lesDetail);
-            $lesDetail->addLesProduit($this);
+            $lesDetail->setProduit($this); // Assurez-vous d'ajouter le produit à l'entité Detail
         }
 
         return $this;
@@ -127,7 +122,7 @@ class Produit
     public function removeLesDetail(Detail $lesDetail): static
     {
         if ($this->lesDetails->removeElement($lesDetail)) {
-            $lesDetail->removeLesProduit($this);
+            // Aucun besoin de retirer le produit de l'entité Detail, car la relation est en OneToMany
         }
 
         return $this;
