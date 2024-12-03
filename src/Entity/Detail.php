@@ -12,97 +12,58 @@ class Detail
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column]
-    private ?int $quantiteProduit = null;
-
-
-    /**
-     * @var Collection<int, Produit>
-     */
-    #[ORM\ManyToMany(targetEntity: Produit::class, inversedBy: 'lesDetails')]
-    private Collection $lesProduits;
+    #[ORM\Column(type: 'integer')]
+    private int $quantiteProduit;
 
     /**
-     * @var Collection<int, Commande>
+     * Relation ManyToOne avec Produit (Un produit peut être associé à plusieurs détails)
      */
-    #[ORM\ManyToMany(targetEntity: Commande::class, mappedBy: 'lesDetails')]
-    private Collection $lesCommandes;
+    #[ORM\ManyToOne(targetEntity: Produit::class, inversedBy: 'lesDetails')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Produit $produit = null;
 
-    public function __construct()
-    {
-        $this->lesProduits = new ArrayCollection();
-        $this->lesCommandes = new ArrayCollection();
-    }
+    #[ORM\ManyToOne(targetEntity: Commande::class, inversedBy: 'details')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Commande $commande = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getQuantiteProduit(): ?int
+    public function getQuantiteProduit(): int
     {
         return $this->quantiteProduit;
     }
 
-    public function setQuantiteProduit(int $quantiteProduit): static
+    public function setQuantiteProduit(int $quantiteProduit): self
     {
         $this->quantiteProduit = $quantiteProduit;
-
         return $this;
     }
 
-
-    /**
-     * @return Collection<int, Produit>
-     */
-    public function getLesProduits(): Collection
+    public function getCommande(): ?Commande
     {
-        return $this->lesProduits;
+        return $this->commande;
     }
 
-    public function addLesProduit(Produit $lesProduit): static
+    public function setCommande(?Commande $commande): self
     {
-        if (!$this->lesProduits->contains($lesProduit)) {
-            $this->lesProduits->add($lesProduit);
-        }
-
+        $this->commande = $commande;
         return $this;
     }
 
-    public function removeLesProduit(Produit $lesProduit): static
+    public function getProduit(): ?Produit
     {
-        $this->lesProduits->removeElement($lesProduit);
-
-        return $this;
+        return $this->produit;
     }
 
-    /**
-     * @return Collection<int, Commande>
-     */
-    public function getLesCommandes(): Collection
+    public function setProduit(?Produit $produit): self
     {
-        return $this->lesCommandes;
-    }
-
-    public function addLesCommande(Commande $lesCommande): static
-    {
-        if (!$this->lesCommandes->contains($lesCommande)) {
-            $this->lesCommandes->add($lesCommande);
-            $lesCommande->addLesDetail($this);
-        }
-
-        return $this;
-    }
-
-    public function removeLesCommande(Commande $lesCommande): static
-    {
-        if ($this->lesCommandes->removeElement($lesCommande)) {
-            $lesCommande->removeLesDetail($this);
-        }
-
+        $this->produit = $produit;
         return $this;
     }
 }
