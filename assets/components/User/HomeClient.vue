@@ -36,7 +36,6 @@ export default {
       });
   },
   methods: {
-    methods: {
     addToCart(produit, quantity) {
         console.log('Tentative d\'ajout au panier :', produit, quantity);
 
@@ -64,9 +63,7 @@ export default {
         .catch(error => {
             console.error('Erreur lors de l\'appel API :', error);
         });
-    },
-}
-
+    }
   }
 };
 </script>

@@ -109,22 +109,18 @@ class Produit
         return $this->lesDetails;
     }
 
-    public function addLesDetail(Detail $lesDetail): static
+    public function addDetail(Detail $detail): self
     {
-        if (!$this->lesDetails->contains($lesDetail)) {
-            $this->lesDetails->add($lesDetail);
-            $lesDetail->setProduit($this); // Assurez-vous d'ajouter le produit à l'entité Detail
+        if (!$this->lesDetails->contains($detail)) {
+            $this->lesDetails[] = $detail;
+            $detail->setProduit($this);
         }
-
         return $this;
     }
-
-    public function removeLesDetail(Detail $lesDetail): static
+    
+    public function removeDetail(Detail $detail): self
     {
-        if ($this->lesDetails->removeElement($lesDetail)) {
-            // Aucun besoin de retirer le produit de l'entité Detail, car la relation est en OneToMany
-        }
-
+        $this->lesDetails->removeElement($detail);
         return $this;
     }
 
