@@ -43,6 +43,7 @@ export default {
 
 
 
+
 <style scoped>
 .produits-app {
   max-width: 1000px;

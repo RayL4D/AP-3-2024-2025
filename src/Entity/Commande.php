@@ -61,21 +61,21 @@ class Commande
     {
         return $this->details;
     }
-
-    public function addLesDetail(Detail $detail): self
-    {
-        if (!$this->details->contains($detail)) {
-            $this->details[] = $detail;
-            $detail->setCommande($this);
-        }
-        return $this;
+public function addDetail(Detail $detail): self
+{
+    if (!$this->details->contains($detail)) {
+        $this->details[] = $detail;
+        $detail->setCommande($this);
     }
-    public function removeLesDetail(Detail $lesDetail): static
-    {
-        $this->lesDetails->removeElement($lesDetail);
+    return $this;
+}
 
-        return $this;
-    }
+public function removeDetail(Detail $detail): self
+{
+    $this->details->removeElement($detail);
+    return $this;
+}
+
 
 
 }

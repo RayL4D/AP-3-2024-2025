@@ -213,6 +213,7 @@ public function ajouterAuPanier(Request $request, ProduitRepository $produitRepo
         return new JsonResponse(['message' => 'ID du produit manquant'], 400);
     }
 
+    // Vérifier si le produit existe
     $produit = $produitRepository->find($produitId);
     if (!$produit) {
         return new JsonResponse(['message' => 'Produit non trouvé'], 404);
@@ -220,19 +221,24 @@ public function ajouterAuPanier(Request $request, ProduitRepository $produitRepo
 
     // Récupère le panier dans la session
     $panier = $session->get('panier', []);
+
+    // Si le produit n'est pas encore dans le panier, on l'ajoute
     if (!isset($panier[$produitId])) {
         $panier[$produitId] = [
             'produit' => $produit,
             'quantite' => $quantite,
         ];
     } else {
+        // Sinon, on met à jour la quantité
         $panier[$produitId]['quantite'] += $quantite;
     }
 
+    // Sauvegarder dans la session
     $session->set('panier', $panier);
 
     return new JsonResponse(['message' => 'Produit ajouté au panier', 'panier' => $panier]);
 }
+
 
     
 #[Route('/api/panier/supprimer/{id}', name: 'api_panier_supprimer', methods: ['DELETE'])]
@@ -265,17 +271,12 @@ public function confirmerPanier(SessionInterface $session, EntityManagerInterfac
 
     // Ajouter chaque produit du panier à la commande via l'entité de jointure (Detail)
     foreach ($panier as $item) {
-        // Créer un détail de commande (avec produit et quantité)
         $detail = new Detail();
-        $detail->setQuantite($item['quantite']);
+        $detail->setQuantiteProduit($item['quantite']);
         $detail->setProduit($item['produit']);
         $detail->setCommande($commande);
 
-        // Persist du détail
         $entityManager->persist($detail);
-
-        // Ajouter le produit à la commande (Many-to-Many)
-        $commande->addProduit($item['produit']);
     }
 
     $entityManager->persist($commande);
@@ -286,6 +287,7 @@ public function confirmerPanier(SessionInterface $session, EntityManagerInterfac
 
     return new JsonResponse(['message' => 'Commande confirmée', 'commande_id' => $commande->getId()]);
 }
+
 
 
 
