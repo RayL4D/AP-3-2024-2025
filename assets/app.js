@@ -15,4 +15,3 @@ createApp(ProduitsApp).mount('#produits-app')
 createApp(HomeAdmin).mount('#admin-app')
 createApp(HomeClient).mount('#client-app')
 
-
