@@ -194,5 +194,99 @@ class APIController extends AbstractController
         return new JsonResponse(['status' => 'Produit mis à jour avec succès']);
     }
     
+    #[Route('/api/panier', name: 'api_get_panier', methods: ['GET'])]
+    public function getPanier(SessionInterface $session): JsonResponse
+    {
+        $panier = $session->get('panier', []);
+        return new JsonResponse(['panier' => $panier]);
+    }
+    
+    
+    #[Route('/api/panier/ajouter', name: 'api_panier_ajouter', methods: ['POST'])]
+public function ajouterAuPanier(Request $request, ProduitRepository $produitRepository, SessionInterface $session): JsonResponse
+{
+    $data = json_decode($request->getContent(), true);
+    $produitId = $data['produit_id'] ?? null;
+    $quantite = $data['quantite'] ?? 1;
+
+    if (!$produitId) {
+        return new JsonResponse(['message' => 'ID du produit manquant'], 400);
+    }
+
+    $produit = $produitRepository->find($produitId);
+    if (!$produit) {
+        return new JsonResponse(['message' => 'Produit non trouvé'], 404);
+    }
+
+    // Récupère le panier dans la session
+    $panier = $session->get('panier', []);
+    if (!isset($panier[$produitId])) {
+        $panier[$produitId] = [
+            'produit' => $produit,
+            'quantite' => $quantite,
+        ];
+    } else {
+        $panier[$produitId]['quantite'] += $quantite;
+    }
+
+    $session->set('panier', $panier);
+
+    return new JsonResponse(['message' => 'Produit ajouté au panier', 'panier' => $panier]);
+}
+
+    
+#[Route('/api/panier/supprimer/{id}', name: 'api_panier_supprimer', methods: ['DELETE'])]
+public function supprimerDuPanier(int $id, SessionInterface $session): JsonResponse
+{
+    $panier = $session->get('panier', []);
+
+    if (isset($panier[$id])) {
+        unset($panier[$id]);
+        $session->set('panier', $panier);
+    }
+
+    return new JsonResponse(['message' => 'Produit supprimé du panier']);
+}
+
+
+#[Route('/api/panier/confirmer', name: 'api_panier_confirmer', methods: ['POST'])]
+public function confirmerPanier(SessionInterface $session, EntityManagerInterface $entityManager): JsonResponse
+{
+    $panier = $session->get('panier', []);
+
+    if (empty($panier)) {
+        return new JsonResponse(['message' => 'Panier vide'], 400);
+    }
+
+    // Créer une nouvelle commande
+    $commande = new Commande();
+    $commande->setDate(new \DateTime());
+    $commande->setStatut('En attente');
+
+    // Ajouter chaque produit du panier à la commande via l'entité de jointure (Detail)
+    foreach ($panier as $item) {
+        // Créer un détail de commande (avec produit et quantité)
+        $detail = new Detail();
+        $detail->setQuantite($item['quantite']);
+        $detail->setProduit($item['produit']);
+        $detail->setCommande($commande);
+
+        // Persist du détail
+        $entityManager->persist($detail);
+
+        // Ajouter le produit à la commande (Many-to-Many)
+        $commande->addProduit($item['produit']);
+    }
+
+    $entityManager->persist($commande);
+    $entityManager->flush();
+
+    // Vider le panier après confirmation
+    $session->remove('panier');
+
+    return new JsonResponse(['message' => 'Commande confirmée', 'commande_id' => $commande->getId()]);
+}
+
+
 
 }
