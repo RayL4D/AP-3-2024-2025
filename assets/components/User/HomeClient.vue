@@ -1,45 +1,156 @@
 <template>
-    <div>
-      <h1>Produits</h1>
-      <div v-for="categorie in categories" :key="categorie.id">
-        <h2>{{ categorie.nom }}</h2>
-        <ul>
-          <li v-for="produit in categorie.produits" :key="produit.id">
-            {{ produit.nom }} - {{ produit.prix }} €
-            <input type="number" v-model="quantities[produit.id]" min="1" />
-            <button @click="addToCart(produit, quantities[produit.id] || 1)">Ajouter au panier</button>
-          </li>
-        </ul>
+  <div class="client-app"> 
+    <Navbar />
+    <div class="dashboard">
+      <div class="hero-section">
+        <h1>Bienvenue dans notre boutique</h1>
+        <p class="welcome-text">
+          Découvrez nos produits exclusifs et profitez de promotions exceptionnelles.
+        </p>
+        <button @click="createOrder" class="cta-button">Passer une commande</button>
+      </div>
+      <div class="features-section">
+        <div class="feature">
+          <img src="/images/shopping-cart.png" alt="Shopping Cart" class="feature-icon" />
+          <h2>Produits de qualité</h2>
+          <p>Explorez notre large gamme de produits soigneusement sélectionnés pour vous.</p>
+        </div>
+        <div class="feature">
+          <img src="/images/delivery-truck.png" alt="Delivery Truck" class="feature-icon" />
+          <h2>Livraison rapide</h2>
+          <p>Recevez vos commandes en un temps record grâce à notre service efficace.</p>
+        </div>
+        <div class="feature">
+          <img src="/images/support.png" alt="Support" class="feature-icon" />
+          <h2>Support client</h2>
+          <p>Notre équipe est disponible pour répondre à toutes vos questions.</p>
+        </div>
       </div>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    data() {
-      return {
-        categories: [],
-        quantities: {}
-      };
-    },
-    mounted() {
-      // Fetch categories and products from backend
-      fetch('/api/categories')
-        .then(response => response.json())
-        .then(data => {
-          this.categories = data;
+  </div>
+</template>
+
+<script>
+import Navbar from "./NavbarClient.vue";
+
+export default {
+  name: "ClientHome",
+  components: {
+    Navbar,
+  },
+  methods: {
+    async createOrder() {
+      try {
+        const response = await fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            date: new Date().toISOString(),
+            statut: "En cours de création",
+          }),
         });
-    },
-    methods: {
-      addToCart(produit, quantity) {
-        // Logic to add the product to the cart
-        console.log(`Ajouté ${quantity} de ${produit.nom} au panier.`);
+
+        if (response.ok) {
+          alert("Commande créée avec succès !");
+        } else {
+          alert("Une erreur s'est produite lors de la création de la commande.");
+        }
+      } catch (error) {
+        console.error("Erreur lors de la création de la commande :", error);
+        alert("Une erreur s'est produite. Veuillez réessayer plus tard.");
       }
-    }
-  };
-  </script>
-  
-  <style scoped>
-  /* Ajoutez votre style ici */
-  </style>
-  
+    },
+  },
+};
+</script>
+
+<style scoped>
+.client-app {
+  font-family: 'Arial', sans-serif;
+  color: #2c3e50;
+  background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+}
+
+.dashboard {
+  width: 100%;
+  max-width: 1200px;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-section {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.hero-section h1 {
+  font-size: 3rem;
+  color: #34495e;
+  margin-bottom: 1rem;
+}
+
+.hero-section .welcome-text {
+  font-size: 1.5rem;
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+}
+
+.cta-button {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  color: white;
+  background-color: #e74c3c;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: #c0392b;
+}
+
+.features-section {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 2rem;
+  width: 100%;
+}
+
+.feature {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  text-align: center;
+  flex: 1 1 300px;
+  max-width: 300px;
+}
+
+.feature-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1rem;
+}
+
+.feature h2 {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.feature p {
+  font-size: 1rem;
+  color: #7f8c8d;
+}
+</style>

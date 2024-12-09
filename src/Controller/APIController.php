@@ -15,8 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Entity\Commande;
 use App\Entity\Detail;
-
-
+use App\Repository\UserRepository;
+use Symfony\Bundle\SecurityBundle\Security;
 
 class APIController extends AbstractController
 {
@@ -206,4 +206,39 @@ class APIController extends AbstractController
     
         return new JsonResponse(['status' => 'Catégorie supprimée avec succès']);
     }
+
+
+    #[Route('/api/orders', name: 'app_api_create_order', methods: ['POST'])]
+    public function createOrder(Request $request, EntityManagerInterface $entityManager, Security $security): JsonResponse
+    {
+        // Récupérer l'utilisateur connecté
+        $user = $security->getUser();
+    
+        if (!$user) {
+            // Si aucun utilisateur n'est connecté, renvoyer une erreur
+            return new JsonResponse(['status' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+    
+        // Décoder le contenu JSON de la requête
+        $data = json_decode($request->getContent(), true);
+    
+        // Vérifier que les données nécessaires sont présentes
+        if (!isset($data['date'], $data['statut'])) {
+            return new JsonResponse(['status' => 'Invalid data'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+    
+        // Créer une nouvelle commande
+        $commande = new Commande();
+        $commande->setDate(new \DateTime($data['date']));
+        $commande->setStatut($data['statut']);
+        $commande->setLeUser($user); // Associer l'utilisateur connecté à la commande
+    
+        // Enregistrer la commande dans la base de données
+        $entityManager->persist($commande);
+        $entityManager->flush();
+    
+        return new JsonResponse(['status' => 'Commande créée avec succès'], JsonResponse::HTTP_CREATED);
+    }
+    
+    
 }

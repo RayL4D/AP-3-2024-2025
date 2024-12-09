@@ -42,6 +42,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255)]
     private ?string $prenom = null;
 
+    /**
+     * @var Collection<int, Commande>
+     */
+    #[ORM\OneToMany(targetEntity: Commande::class, mappedBy: 'leUser')]
+    private Collection $lesCommandes;
+
+    public function __construct()
+    {
+        $this->lesCommandes = new ArrayCollection();
+    }
+
 
     public function getId(): ?int
     {
@@ -138,6 +149,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPrenom(string $prenom): static
     {
         $this->prenom = $prenom;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Commande>
+     */
+    public function getLesCommandes(): Collection
+    {
+        return $this->lesCommandes;
+    }
+
+    public function addLesCommande(Commande $lesCommande): static
+    {
+        if (!$this->lesCommandes->contains($lesCommande)) {
+            $this->lesCommandes->add($lesCommande);
+            $lesCommande->setLeUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLesCommande(Commande $lesCommande): static
+    {
+        if ($this->lesCommandes->removeElement($lesCommande)) {
+            // set the owning side to null (unless already changed)
+            if ($lesCommande->getLeUser() === $this) {
+                $lesCommande->setLeUser(null);
+            }
+        }
 
         return $this;
     }

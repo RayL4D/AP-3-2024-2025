@@ -28,6 +28,9 @@ class Commande
     #[ORM\OneToMany(targetEntity: Detail::class, mappedBy: 'laCommande')]
     private Collection $lesDetails;
 
+    #[ORM\ManyToOne(inversedBy: 'lesCommandes')]
+    private ?User $leUser = null;
+
     public function __construct()
     {
         $this->lesDetails = new ArrayCollection();
@@ -88,6 +91,18 @@ class Commande
                 $lesDetail->setLaCommande(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getLeUser(): ?User
+    {
+        return $this->leUser;
+    }
+
+    public function setLeUser(?User $leUser): static
+    {
+        $this->leUser = $leUser;
 
         return $this;
     }

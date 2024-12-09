@@ -24,6 +24,7 @@ class Detail
     #[ORM\ManyToOne(inversedBy: 'lesDetails')]
     private ?Commande $laCommande = null;
 
+
     public function getId(): ?int
     {
         return $this->id;

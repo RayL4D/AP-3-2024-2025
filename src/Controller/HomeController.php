@@ -4,6 +4,7 @@
 namespace App\Controller;
 
 use App\Repository\CategorieRepository;
+use App\Repository\DetailRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
