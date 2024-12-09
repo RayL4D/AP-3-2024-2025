@@ -7,6 +7,10 @@ use App\Entity\Stock;
 use App\Entity\Emplacement;
 use App\Repository\CategorieRepository;
 use App\Repository\ProduitRepository;
+use App\Repository\CommandeRepository;
+use App\Repository\DetailRepository;
+use App\Repository\StockRepository;
+use App\Repository\EmplacementRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,6 +19,13 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Entity\Commande;
 use App\Entity\Detail;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use App\Data;
+use Psr\Log\LoggerInterface;
+use App\Http\Controllers\PanierController;
+
+
+
 
 
 
@@ -29,6 +40,8 @@ class APIController extends AbstractController
         return $this->render('api/index.html.twig', [
             'controller_name' => 'APIController',
         ]);
+        $data = new Data();
+        return $this->json($data);
     }
 
     #[Route('/api/produits', name: 'app_api_produits', methods: ['GET'])]
@@ -165,6 +178,8 @@ class APIController extends AbstractController
         return new JsonResponse($data);
     }
 
+    
+
     #[Route('/api/categories/add', name: 'app_api_add_categorie', methods: ['POST'])]
     public function addCategorie(Request $request, EntityManagerInterface $entityManager, CategorieRepository $categorieRepository): JsonResponse
     {
@@ -206,4 +221,88 @@ class APIController extends AbstractController
     
         return new JsonResponse(['status' => 'Catégorie supprimée avec succès']);
     }
+
+    #[Route('/api/commande/ajouter', name: 'api_panier_ajouter', methods: ['POST'])]
+    public function ajouterCommande(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+    // Récupérer les données de la requête
+    $produits = json_decode($request->getContent(), true)['produits']; // Liste des produits avec leur quantité
+
+    // Créer une nouvelle commande
+    $commande = new Commande();
+    $commande->setDate(new \DateTime()); // Vous pouvez ajouter un champ Date ou Statut selon votre modèle
+    $entityManager->persist($commande);
+    $entityManager->flush(); // Sauvegarder la commande pour obtenir son ID
+
+    // Ajouter les détails de commande
+    foreach ($produits as $produitData) {
+        $produit = $entityManager->getRepository(Produit::class)->find($produitData['id']);
+        $quantite = $produitData['quantite'];
+
+        if ($produit) {
+            // Créer un détail de commande pour chaque produit
+            $detailCommande = new Detail();
+            $detailCommande->setLeProduit($produit);
+            $detailCommande->setLaCommande($commande);
+            $detailCommande->setQuantiteProduit($quantite);
+
+            $entityManager->persist($detailCommande);
+        }
+    }
+
+    // Sauvegarder les détails de commande
+    $entityManager->flush();
+
+    return new JsonResponse(['message' => 'Commande et détails ajoutés avec succès'], JsonResponse::HTTP_CREATED);
+    }
+
+
+    #[Route('/api/panier/ajouter', name: 'api_panier_ajouter', methods: ['POST'])]
+    public function ajouterProduit(Request $request)
+    {
+        // Validation des données
+        $validated = $request->validate([
+            'produitId' => 'required|integer|exists:produits,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        // Récupérer le produit
+        $produit = Produit::find($validated['produitId']);
+
+        // Récupérer la quantité demandée
+        $quantity = $validated['quantity'];
+
+        // Vérifier si le panier existe déjà dans la session
+        $panier = Session::get('panier', []);
+
+        // Ajouter le produit au panier ou augmenter sa quantité
+        if (isset($panier[$produit->id])) {
+            $panier[$produit->id]['quantity'] += $quantity; // Augmenter la quantité si déjà présent
+        } else {
+            // Ajouter le produit dans le panier avec sa quantité
+            $panier[$produit->id] = [
+                'produit' => $produit,
+                'quantity' => $quantity,
+            ];
+        }
+
+        // Sauvegarder les modifications dans la session
+        Session::put('panier', $panier);
+
+        // Retourner une réponse
+        return response()->json([
+            'status' => 'Produit ajouté au panier.',
+            'panier' => $panier
+        ]);
+    }
+
+    #[Route('/api/commande', name: 'api_commande', methods: ['POST'])]
+    public function passerCommande(Request $request): JsonResponse
+    {
+        // Logique pour traiter la commande, comme l'enregistrement dans la base de données
+        return new JsonResponse(['message' => 'Commande passée avec succès'], JsonResponse::HTTP_CREATED);
+    }
+    
+    
+   
 }

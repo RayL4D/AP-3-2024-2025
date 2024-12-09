@@ -5,6 +5,8 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use App\Repository\CategorieRepository;
+
 
 class AdminController extends AbstractController
 {
@@ -37,5 +39,13 @@ class AdminController extends AbstractController
             'controller_name' => 'AdminController',
         ]);
     }
-    
+
+    #[Route('/client/produit', name: 'app_produit_client')]
+    public function produitClient(CategorieRepository $categorieRepository): Response
+    {
+        $categories = $categorieRepository->findAll();
+        return $this->render('home/produit.html.twig', [
+            'categories' => $categories,
+        ]);
+    }
 }

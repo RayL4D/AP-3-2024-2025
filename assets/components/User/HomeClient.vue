@@ -1,45 +1,66 @@
 <template>
-    <div>
-      <h1>Produits</h1>
-      <div v-for="categorie in categories" :key="categorie.id">
-        <h2>{{ categorie.nom }}</h2>
-        <ul>
-          <li v-for="produit in categorie.produits" :key="produit.id">
-            {{ produit.nom }} - {{ produit.prix }} €
-            <input type="number" v-model="quantities[produit.id]" min="1" />
-            <button @click="addToCart(produit, quantities[produit.id] || 1)">Ajouter au panier</button>
-          </li>
-        </ul>
-      </div>
+  <div class="client-app">
+    <Navbar />
+    <div class="dashboard">
+      <h1>Bienvenue</h1>
+      <p class="welcome-text">
+        Gérez votre plateforme facilement. Utilisez le menu ci-dessus pour naviguer
+        entre les sections.
+      </p>
+      <a href="/client/produit">Voir les produits</a>
+
     </div>
-  </template>
-  
-  <script>
-  export default {
-    data() {
-      return {
-        categories: [],
-        quantities: {}
-      };
-    },
-    mounted() {
-      // Fetch categories and products from backend
-      fetch('/api/categories')
-        .then(response => response.json())
-        .then(data => {
-          this.categories = data;
-        });
-    },
-    methods: {
-      addToCart(produit, quantity) {
-        // Logic to add the product to the cart
-        console.log(`Ajouté ${quantity} de ${produit.nom} au panier.`);
-      }
-    }
-  };
-  </script>
-  
-  <style scoped>
-  /* Ajoutez votre style ici */
-  </style>
-  
+  </div>
+</template>
+
+<script>
+import Navbar from "./NavbarClient.vue";
+
+export default {
+  name: "ClientHome",
+  components: {
+    Navbar,
+  },
+};
+</script>
+
+<style scoped>
+.client-app {
+  font-family: 'Arial', sans-serif;
+  color: #2c3e50;
+  background: linear-gradient(135deg, #e0eafc, #cfdef3);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+}
+
+.dashboard {
+  max-width: 800px; /* Ajustement de la largeur */
+  width: 100%;
+  padding: 2rem;
+  text-align: center;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  margin-top: 2rem;
+  transition: transform 0.3s ease-in-out;
+}
+
+.dashboard:hover {
+  transform: translateY(-5px);
+}
+
+.dashboard h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #34495e;
+}
+
+.welcome-text {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  color: #7f8c8d;
+}
+</style>
