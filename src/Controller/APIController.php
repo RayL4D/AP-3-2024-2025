@@ -240,5 +240,24 @@ class APIController extends AbstractController
         return new JsonResponse(['status' => 'Commande créée avec succès'], JsonResponse::HTTP_CREATED);
     }
     
+    #[Route('/api/orders/check', name: 'app_api_check_order', methods: ['GET'])]
+    public function checkOrder(EntityManagerInterface $entityManager, Security $security): JsonResponse
+    {
+        // Récupérer l'utilisateur connecté
+        $user = $security->getUser();
+    
+        if (!$user) {
+            return new JsonResponse(['hasOrder' => false], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+    
+        // Rechercher une commande avec le statut "En cours de création"
+        $existingOrder = $entityManager->getRepository(Commande::class)
+            ->findOneBy(['leUser' => $user, 'statut' => 'En cours de création']);
+    
+        // Retourner une réponse indiquant si une commande existe
+        return new JsonResponse(['hasOrder' => $existingOrder !== null], JsonResponse::HTTP_OK);
+    }
+    
+
     
 }

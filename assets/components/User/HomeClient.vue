@@ -7,7 +7,14 @@
         <p class="welcome-text">
           Découvrez nos produits exclusifs et profitez de promotions exceptionnelles.
         </p>
-        <button @click="createOrder" class="cta-button">Passer une commande</button>
+        <!-- Bouton désactivé si l'utilisateur a déjà une commande en cours -->
+        <button 
+          @click="createOrder" 
+          class="cta-button" 
+          :disabled="hasOrder"
+        >
+          Passer une commande
+        </button>
       </div>
       <div class="features-section">
         <div class="feature">
@@ -38,7 +45,25 @@ export default {
   components: {
     Navbar,
   },
+  data() {
+    return {
+      hasOrder: false,  // Etat de la commande en cours
+    };
+  },
+  mounted() {
+    // Vérifier si l'utilisateur a une commande en cours lors du chargement de la page
+    this.checkOrderStatus();
+  },
   methods: {
+    async checkOrderStatus() {
+      try {
+        const response = await fetch('/api/orders/check');
+        const data = await response.json();
+        this.hasOrder = data.hasOrder;  // Met à jour l'état en fonction de la réponse
+      } catch (error) {
+        console.error("Erreur lors de la vérification de la commande :", error);
+      }
+    },
     async createOrder() {
       try {
         const response = await fetch("/api/orders", {
@@ -54,6 +79,7 @@ export default {
 
         if (response.ok) {
           alert("Commande créée avec succès !");
+          window.location.href = "/commande";
         } else {
           alert("Une erreur s'est produite lors de la création de la commande.");
         }
@@ -153,4 +179,10 @@ export default {
   font-size: 1rem;
   color: #7f8c8d;
 }
+
+.cta-button:disabled {
+  background-color: #ccc;  /* Couleur grise pour le bouton désactivé */
+  cursor: not-allowed;  /* Curseur "non autorisé" */
+}
+
 </style>
