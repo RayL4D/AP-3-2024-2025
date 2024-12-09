@@ -240,5 +240,97 @@ class APIController extends AbstractController
         return new JsonResponse(['status' => 'Commande créée avec succès'], JsonResponse::HTTP_CREATED);
     }
     
+    #[Route('/api/commande/ajouter', name: 'api_panier_ajouter', methods: ['POST'])]
+    public function ajouterCommande(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+    // Récupérer les données de la requête
+    $produits = json_decode($request->getContent(), true)['produits']; // Liste des produits avec leur quantité
+
+    // Créer une nouvelle commande
+    $commande = new Commande();
+    $commande->setDate(new \DateTime()); // Vous pouvez ajouter un champ Date ou Statut selon votre modèle
+    $entityManager->persist($commande);
+    $entityManager->flush(); // Sauvegarder la commande pour obtenir son ID
+
+    // Ajouter les détails de commande
+    foreach ($produits as $produitData) {
+        $produit = $entityManager->getRepository(Produit::class)->find($produitData['id']);
+        $quantite = $produitData['quantite'];
+
+        if ($produit) {
+            // Créer un détail de commande pour chaque produit
+            $detailCommande = new Detail();
+            $detailCommande->setLeProduit($produit);
+            $detailCommande->setLaCommande($commande);
+            $detailCommande->setQuantiteProduit($quantite);
+
+            $entityManager->persist($detailCommande);
+        }
+    }
+
+    // Sauvegarder les détails de commande
+    $entityManager->flush();
+
+    return new JsonResponse(['message' => 'Commande et détails ajoutés avec succès'], JsonResponse::HTTP_CREATED);
+    }
+
+
+    #[Route('/api/commande/{id}/ajouter-details', name: 'api_commande_ajouter_details', methods: ['POST'])]
+    public function ajouterDetailsCommande(
+        int $id,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        CommandeRepository $commandeRepository
+    ): JsonResponse {
+        // Rechercher la commande par son ID
+        $commande = $commandeRepository->find($id);
+    
+        if (!$commande) {
+            return new JsonResponse([
+                'message' => 'Commande introuvable'
+            ], JsonResponse::HTTP_NOT_FOUND);
+        }
+    
+        // Décoder le contenu JSON de la requête
+        $data = json_decode($request->getContent(), true);
+    
+        if (!isset($data['details']) || !is_array($data['details'])) {
+            return new JsonResponse([
+                'message' => 'Les détails sont invalides ou manquants'
+            ], JsonResponse::HTTP_BAD_REQUEST);
+        }
+    
+        // Ajouter les détails un par un
+        foreach ($data['details'] as $detailData) {
+            // Vérifier les informations nécessaires dans chaque détail
+            if (!isset($detailData['produit'], $detailData['quantite'], $detailData['prix_unitaire'])) {
+                return new JsonResponse([
+                    'message' => 'Détail incomplet, produit, quantité et prix requis'
+                ], JsonResponse::HTTP_BAD_REQUEST);
+            }
+    
+            // Créer un nouveau détail
+            $detail = new DetailCommande();
+            $detail->setLaCommande($commande); // Associer au parent
+            $detail->setLeProduit($detailData['produit']);
+            $detail->setLaQuantite($detailData['quantite']);
+            $detail->setLePrixUnitaire($detailData['prix_unitaire']);
+    
+            // Enregistrer le détail
+            $entityManager->persist($detail);
+        }
+    
+        // Sauvegarder tous les détails dans la base de données
+        $entityManager->flush();
+    
+        return new JsonResponse([
+            'message' => 'Détails ajoutés avec succès à la commande',
+            'commande_id' => $commande->getId(),
+            'details' => $data['details'] // Retourner les détails ajoutés pour information
+        ], JsonResponse::HTTP_OK);
+    }
+    
+    
+
     
 }

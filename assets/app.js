@@ -8,10 +8,11 @@ import CategoriesApp from './components/Admin/Categories.vue';
 import HomeAdmin from './components/Admin/HomeAdmin.vue';
 import HomeClient from './components/User/HomeClient.vue';
 import PanierApp from './components/User/Panier.vue'
-
+import ClientProduitsApp from './components/User/Produits.vue'
 
 createApp(CategoriesApp).mount('#categories-app')
 createApp(ProduitsApp).mount('#produits-app')
 createApp(HomeAdmin).mount('#admin-app')
 createApp(HomeClient).mount('#client-app')
 createApp(PanierApp).mount('#panier-app')
+createApp(ClientProduitsApp).mount('#client-produit-app')

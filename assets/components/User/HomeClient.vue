@@ -54,6 +54,7 @@ export default {
 
         if (response.ok) {
           alert("Commande créée avec succès !");
+          window.location.href = "/client/produit";
         } else {
           alert("Une erreur s'est produite lors de la création de la commande.");
         }

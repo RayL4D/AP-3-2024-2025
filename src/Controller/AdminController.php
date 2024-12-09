@@ -38,4 +38,22 @@ class AdminController extends AbstractController
         ]);
     }
     
+
+    #[Route('/client/produit', name: 'app_client_produit')]
+    public function getProduit(): Response
+    {
+
+        return $this->render('home/produit.html.twig', [
+            'controller_name' => 'ClientController',
+        ]);
+    }
+
+    #[Route('/client/panier', name: 'app_client_panier')]
+    public function getPanier(): Response
+    {
+
+        return $this->render('home/panier.html.twig', [
+            'controller_name' => 'ClientController',
+        ]);
+    }
 }
