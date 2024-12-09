@@ -259,5 +259,109 @@ class APIController extends AbstractController
     }
     
 
+
+    #[Route('/api/orders/{id}/add-detail', name: 'app_api_add_detail', methods: ['POST'])]
+    public function addDetail(Request $request, int $id, EntityManagerInterface $entityManager, ProduitRepository $produitRepository): JsonResponse
+    {
+        $commande = $entityManager->getRepository(Commande::class)->find($id);
+
+        if (!$commande) {
+            return new JsonResponse(['status' => 'Commande non trouvée'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['produit_id'], $data['quantite'])) {
+            return new JsonResponse(['status' => 'Données invalides'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        $produit = $produitRepository->find($data['produit_id']);
+        if (!$produit) {
+            return new JsonResponse(['status' => 'Produit non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $detail = new Detail();
+        $detail->setLaCommande($commande);
+        $detail->setLeProduit($produit);
+        $detail->setQuantiteProduit($data['quantite']);
+
+        $entityManager->persist($detail);
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Produit ajouté à la commande'], JsonResponse::HTTP_CREATED);
+    }
+
+
+    #[Route('/api/orders/{id}/details', name: 'app_api_get_order_details', methods: ['GET'])]
+    public function getOrderDetails(int $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $commande = $entityManager->getRepository(Commande::class)->find($id);
+
+        if (!$commande) {
+            return new JsonResponse(['status' => 'Commande non trouvée'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        $details = $commande->getLesDetails();
+        $data = array_map(function ($detail) {
+            return [
+                'produit_id' => $detail->getLeProduit()->getId(),
+                'produit_nom' => $detail->getLeProduit()->getNom(),
+                'quantite' => $detail->getQuantite(),
+                'prix' => $detail->getLeProduit()->getPrix(),
+            ];
+        }, $details->toArray());
+
+        return new JsonResponse($data);
+    }
+
+
+    #[Route('/api/orders/current', name: 'app_api_current_order', methods: ['GET'])]
+    public function getCurrentOrder(EntityManagerInterface $entityManager, Security $security): JsonResponse
+    {
+        $user = $security->getUser();
+    
+        if (!$user) {
+            return new JsonResponse(['status' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+    
+        $currentOrder = $entityManager->getRepository(Commande::class)
+            ->findOneBy(['leUser' => $user, 'statut' => 'En cours de création']);
+    
+        if (!$currentOrder) {
+            return new JsonResponse(['status' => 'No current order'], JsonResponse::HTTP_NOT_FOUND);
+        }
+    
+        return new JsonResponse([
+            'id' => $currentOrder->getId(),
+            'date' => $currentOrder->getDate()->format('Y-m-d H:i:s'),
+            'statut' => $currentOrder->getStatut(),
+        ]);
+    }
+    
+
+    #[Route('/api/orders/validate', name: 'app_api_validate_order', methods: ['POST'])]
+    public function validateOrder(EntityManagerInterface $entityManager, Security $security): JsonResponse
+    {
+        $user = $security->getUser();
+
+        if (!$user) {
+            return new JsonResponse(['status' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        $currentOrder = $entityManager->getRepository(Commande::class)
+            ->findOneBy(['leUser' => $user, 'statut' => 'En cours de création']);
+
+        if (!$currentOrder) {
+            return new JsonResponse(['status' => 'No current order'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        // Valider la commande
+        $currentOrder->setStatut('Validée');
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Commande validée avec succès']);
+    }
+
+
     
 }

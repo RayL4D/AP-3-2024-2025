@@ -4,26 +4,57 @@
       <div class="commande-container">
         <div class="commande-header">
           <h1>Votre Commande</h1>
-          <p class="commande-subtitle">Vérifiez les détails de votre commande avant validation.</p>
+          <p class="commande-subtitle">Ajoutez des produits et vérifiez les détails avant validation.</p>
         </div>
-        
+  
+        <!-- Liste des produits disponibles -->
+        <div class="produits-container">
+          <h2>Produits Disponibles</h2>
+          <ul class="produits-list">
+            <li v-for="produit in produits" :key="produit.id" class="produit-item">
+              <div class="produit-info">
+                <span class="produit-name">{{ produit.nom }}</span>
+                <span class="produit-price">{{ produit.prix.toFixed(2) }} €</span>
+              </div>
+              <button 
+                class="add-button" 
+                @click="ajouterProduit(produit)" 
+                :aria-label="'Ajouter ' + produit.nom">
+                Ajouter
+              </button>
+            </li>
+          </ul>
+        </div>
+  
+        <!-- Détails de la commande -->
         <div class="commande-details">
           <h2>Détails de la commande</h2>
-          <div v-if="commande">
+          <div v-if="commande.items.length">
             <ul class="commande-items">
               <li v-for="item in commande.items" :key="item.id" class="commande-item">
                 <div class="item-info">
-                  <span class="item-name">{{ item.name }}</span>
+                  <span class="item-name">{{ item.nom }}</span>
                   <span class="item-quantity">Quantité : {{ item.quantity }}</span>
                 </div>
-                <span class="item-price">{{ item.price.toFixed(2) }} €</span>
+                <span class="item-price">{{ (item.prix * item.quantity).toFixed(2) }} €</span>
+                <button 
+                  class="remove-button" 
+                  @click="retirerProduit(item)" 
+                  :aria-label="'Retirer ' + item.nom">
+                  Retirer
+                </button>
               </li>
             </ul>
             <div class="commande-total">
               <span>Total :</span>
-              <strong>{{ commande.total.toFixed(2) }} €</strong>
+              <strong>{{ commandeTotal }} €</strong>
             </div>
-            <button class="cta-button" @click="validerCommande">Valider la commande</button>
+            <button 
+              class="cta-button" 
+              @click="validerCommande" 
+              :disabled="!commande.items.length">
+              Valider la commande
+            </button>
           </div>
           <div v-else>
             <p>Votre commande est vide. Ajoutez des articles pour commencer !</p>
@@ -43,24 +74,69 @@
     },
     data() {
       return {
-        commande: null, // Exemple de structure : { items: [{ id, name, quantity, price }], total }
+        produits: [], // Liste des produits disponibles
+        commande: {
+          items: [], // Liste des produits dans la commande
+        },
       };
     },
+    computed: {
+      commandeTotal() {
+        return this.commande.items
+          .reduce((sum, item) => sum + item.prix * item.quantity, 0)
+          .toFixed(2);
+      },
+    },
     mounted() {
+      this.fetchProduits();
       this.fetchCommande();
     },
     methods: {
+      async fetchProduits() {
+        try {
+          const response = await fetch('/api/produits');
+          if (response.ok) {
+            this.produits = await response.json();
+          } else {
+            console.error("Erreur lors de la récupération des produits");
+          }
+        } catch (error) {
+          console.error("Erreur réseau :", error);
+        }
+      },
       async fetchCommande() {
         try {
-          // Exemple de requête API pour récupérer la commande
           const response = await fetch('/api/orders/current');
           if (response.ok) {
-            this.commande = await response.json();
+            const data = await response.json();
+            this.commande.items = data.items || [];
           } else {
             console.error("Erreur lors de la récupération de la commande");
           }
         } catch (error) {
           console.error("Erreur réseau :", error);
+        }
+      },
+      ajouterProduit(produit) {
+        if (!produit || typeof produit.prix !== 'number') {
+          console.error("Produit invalide", produit);
+          return;
+        }
+        const existingItem = this.commande.items.find((item) => item.id === produit.id);
+        if (existingItem) {
+          existingItem.quantity += 1;
+        } else {
+          this.commande.items.push({ ...produit, quantity: 1 });
+        }
+      },
+      retirerProduit(produit) {
+        const index = this.commande.items.findIndex((item) => item.id === produit.id);
+        if (index !== -1) {
+          const item = this.commande.items[index];
+          item.quantity -= 1;
+          if (item.quantity <= 0) {
+            this.commande.items.splice(index, 1);
+          }
         }
       },
       async validerCommande() {
@@ -70,10 +146,11 @@
             headers: {
               'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ items: this.commande.items }),
           });
           if (response.ok) {
             alert('Votre commande a été validée avec succès !');
-            this.commande = null; // Réinitialiser après validation
+            this.commande.items = []; // Réinitialiser après validation
           } else {
             alert("Erreur lors de la validation de la commande.");
           }
@@ -102,76 +179,69 @@
     font-size: 1rem;
   }
   
+  .produits-container,
   .commande-details {
     background-color: #f9f9f9;
     border-radius: 8px;
     padding: 20px;
+    margin-bottom: 20px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
   
+  .produits-list,
   .commande-items {
     list-style: none;
     padding: 0;
-    margin: 0 0 20px;
+    margin: 0;
   }
   
+  .produit-item,
   .commande-item {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 10px 0;
     border-bottom: 1px solid #eaeaea;
   }
   
+  .produit-info,
   .item-info {
     display: flex;
     flex-direction: column;
   }
   
+  .produit-name,
   .item-name {
     font-weight: bold;
   }
   
-  .item-quantity {
-    color: #777;
-    font-size: 0.9rem;
-  }
-  
+  .produit-price,
   .item-price {
-    font-weight: bold;
     color: #333;
+    font-weight: bold;
   }
   
-  .commande-total {
-    display: flex;
-    justify-content: space-between;
-    font-size: 1.2rem;
-    margin-top: 10px;
-  }
-  
-  .cta-button {
-    display: inline-block;
+  .add-button,
+  .cta-button,
+  .remove-button {
     background-color: #007bff;
     color: #fff;
     border: none;
     border-radius: 4px;
     padding: 10px 20px;
-    font-size: 1rem;
+    font-size: 0.9rem;
     cursor: pointer;
-    margin-top: 20px;
-    text-align: center;
   }
   
-  .cta-button:hover {
+  .add-button:hover,
+  .cta-button:hover,
+  .remove-button:hover {
     background-color: #0056b3;
   }
   
-  .cta-link {
-    color: #007bff;
-    text-decoration: none;
-  }
-  
-  .cta-link:hover {
-    text-decoration: underline;
+  .cta-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
   }
   </style>
   
