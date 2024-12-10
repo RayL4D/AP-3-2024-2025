@@ -2,6 +2,7 @@
     <nav class="navbar">
       <ul>
         <li><a href="/home"><i class="fas fa-home"></i> Accueil</a></li>
+        <li><a href="/anciennecommande"><i class="fas fa-home"></i> Ancienne Commande</a></li>
         <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
       </ul>
     </nav>

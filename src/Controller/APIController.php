@@ -363,5 +363,44 @@ class APIController extends AbstractController
     }
 
 
+// Ajoutez ceci dans votre APIController
+
+#[Route('/api/orders/user', name: 'app_api_user_orders', methods: ['GET'])]
+public function getUserOrders(EntityManagerInterface $entityManager, Security $security): JsonResponse
+{
+    $user = $security->getUser();
+
+    if (!$user) {
+        return new JsonResponse(['status' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+    }
+
+    // Récupérer les commandes de l'utilisateur connecté
+    $commandes = $entityManager->getRepository(Commande::class)->findBy(['leUser' => $user]);
+
+    $data = array_map(function ($commande) {
+        return [
+            'id' => $commande->getId(),
+            'date' => $commande->getDate()->format('Y-m-d H:i:s'),
+            'statut' => $commande->getStatut(),
+            'details' => array_map(function ($detail) {
+                $produit = $detail->getLeProduit();
+                $stock = $produit->getLeStock();
+
+                return [
+                    'produit_id' => $produit->getId(),
+                    'produit_nom' => $produit->getNom(),
+                    'quantite' => $detail->getQuantiteProduit(),
+                    'prix' => $produit->getPrix(),
+                    'stock_quantite' => $stock ? $stock->getQuantiteStock() : null,  // Quantité en stock
+                ];
+            }, $commande->getLesDetails()->toArray())
+        ];
+    }, $commandes);
+
+    return new JsonResponse($data);
+}
+
+
+
     
 }

@@ -37,4 +37,13 @@ class HomeController extends AbstractController
             'commande' => $commande,
         ]);
     }
+
+    #[Route('/anciennecommande', name: 'app_ancienne_commande')]
+    public function AncienneCommande(DetailRepository $detailRepository): Response
+    {
+        $commande = $detailRepository->findAll();
+        return $this->render('user/anciennecommande.html.twig', [
+            'commande' => $commande,
+        ]);
+    }
 }
