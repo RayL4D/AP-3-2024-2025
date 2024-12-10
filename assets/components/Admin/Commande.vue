@@ -29,6 +29,12 @@
                 </span>
               </li>
             </ul>
+            <!-- Bouton pour naviguer vers une autre page -->
+            <div class="order-actions">
+              <button @click="goToDetails" class="btn-primary">
+                Prendre en charge la commande
+              </button>
+            </div>
           </li>
         </ul>
       </div>
@@ -48,25 +54,34 @@ export default {
       loading: true,
     };
   },
-  async mounted() {
-    try {
-      const response = await fetch('/api/orders/user/admin', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
-      if (response.ok) {
-        this.orders = await response.json();
-      } else {
-        console.error('Erreur lors de la récupération des commandes.');
+  methods: {
+    async fetchOrders() {
+      try {
+        const response = await fetch('/api/orders/user/admin', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+        });
+        if (response.ok) {
+          this.orders = await response.json();
+        } else {
+          console.error('Erreur lors de la récupération des commandes.');
+        }
+      } catch (error) {
+        console.error('Erreur de connexion', error);
+      } finally {
+        this.loading = false;
       }
-    } catch (error) {
-      console.error('Erreur de connexion', error);
-    } finally {
-      this.loading = false;
-    }
+    },
+    goToDetails() {
+      // Redirige vers la page /commande
+      window.location.href = "/commande";
+    },
+  },
+  async mounted() {
+    await this.fetchOrders();
   },
 };
 </script>
@@ -155,5 +170,25 @@ export default {
 .product-name {
   font-weight: bold;
   color: #007bff;
+}
+
+.order-actions {
+  text-align: right;
+  margin-top: 15px;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
 }
 </style>
