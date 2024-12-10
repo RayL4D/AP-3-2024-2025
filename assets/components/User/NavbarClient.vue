@@ -2,8 +2,6 @@
     <nav class="navbar">
       <ul>
         <li><a href="/home"><i class="fas fa-home"></i> Accueil</a></li>
-        <li><a href="/commande"><i class="fas fa-shopping-cart"></i> Commande</a></li>
-        <li><a href="/panier"><i class="fas fa-shopping-cart"></i> Panier</a></li>
         <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
       </ul>
     </nav>
