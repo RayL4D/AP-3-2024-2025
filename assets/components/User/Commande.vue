@@ -12,7 +12,7 @@
         <h2>Produits Disponibles</h2>
         <div v-if="loadingCategories || loadingProduits">Chargement...</div>
         <div v-else>
-          <!-- Menu déroulant pour filtrer par catégorie -->
+          <!-- Filtre par catégorie -->
           <div class="category-filter">
             <label for="categorySelect">Filtrer par catégorie :</label>
             <select id="categorySelect" v-model="categorieFiltre">
@@ -22,9 +22,19 @@
               </option>
             </select>
           </div>
+
+          <!-- Trier par prix -->
+          <div class="sort-filter">
+            <label for="sortSelect">Trier par prix :</label>
+            <select id="sortSelect" v-model="ordreTri">
+              <option value="asc">Croissant</option>
+              <option value="desc">Décroissant</option>
+            </select>
+          </div>
+
           <ul class="produits-list">
             <li
-              v-for="produit in produitsFiltres"
+              v-for="produit in produitsFiltresTries"
               :key="produit.id"
               class="produit-item"
               :class="{ 'is-selected': commande.items.some(item => item.id === produit.id) }"
@@ -88,6 +98,7 @@
 </template>
 
 
+
 <script>
 import NavbarClient from "./NavbarClient.vue";
 
@@ -107,15 +118,22 @@ export default {
       loadingCategories: true,
       loadingCommande: true,
       categorieFiltre: "", // Catégorie sélectionnée pour le filtre
+      ordreTri: "asc", // Ordre de tri : "asc" pour croissant, "desc" pour décroissant
     };
   },
   computed: {
     produitsFiltres() {
       // Filtrer les produits selon la catégorie sélectionnée
       if (!this.categorieFiltre) {
-        return this.produits; // Si aucune catégorie n'est sélectionnée, afficher tous les produits
+        return this.produits;
       }
       return this.produits.filter(produit => produit.categorie_id === this.categorieFiltre);
+    },
+    produitsFiltresTries() {
+      // Trier les produits filtrés selon l'ordre sélectionné
+      return [...this.produitsFiltres].sort((a, b) => {
+        return this.ordreTri === "asc" ? a.prix - b.prix : b.prix - a.prix;
+      });
     },
     commandeTotal() {
       return this.commande.items
@@ -223,110 +241,173 @@ export default {
 };
 </script>
 
-  
-  <style scoped>
-  .commande-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  
-  .commande-header {
-    text-align: center;
-    margin-bottom: 30px;
-  }
-  
-  .commande-subtitle {
-    color: #555;
-    font-size: 1rem;
-  }
-  
-  .produits-container,
-  .commande-details {
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
-  
-  .produits-list,
-  .commande-items {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .produit-item,
-  .commande-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #eaeaea;
-  }
-  
-  .produit-info,
-  .item-info {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .produit-name,
-  .item-name {
-    font-weight: bold;
-  }
-  
-  .produit-price,
-  .item-price {
-    color: #333;
-    font-weight: bold;
-  }
-  
-  .add-button,
-  .cta-button,
-  .remove-button {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    padding: 10px 20px;
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-  
-  .add-button:hover,
-  .cta-button:hover,
-  .remove-button:hover {
-    background-color: #0056b3;
-  }
-  
-  .cta-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
 
-  /* Styles existants + amélioration visuelle */
-  .produit-item.is-selected {
-    background-color: #e6f7ff;
-    border-color: #91d5ff;
-  }
-
-  .category-filter {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
+  
+<style scoped>
+.commande-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f3f4f6;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.category-filter label {
-  margin-right: 10px;
+.commande-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.commande-header h1 {
+  font-size: 2rem;
+  color: #333;
+}
+
+.commande-subtitle {
+  color: #666;
+  font-size: 1.1rem;
+  margin-top: 8px;
+}
+
+.produits-container,
+.commande-details {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.produits-container h2,
+.commande-details h2 {
+  font-size: 1.5rem;
+  color: #333;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.produits-list,
+.commande-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.produit-item,
+.commande-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.produit-item:hover,
+.commande-item:hover {
+  background-color: #f0f8ff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.produit-info,
+.item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.produit-name,
+.item-name {
+  font-size: 1.1rem;
+  color: #333;
   font-weight: bold;
 }
 
-.category-filter select {
-  padding: 5px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
+.produit-category {
+  color: #666;
+  font-size: 0.9rem;
 }
-  </style>
+
+.produit-price,
+.item-price {
+  font-size: 1rem;
+  color: #007bff;
+  font-weight: bold;
+}
+
+.add-button,
+.cta-button,
+.remove-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.add-button:hover,
+.cta-button:hover,
+.remove-button:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.cta-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.commande-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin-top: 15px;
+}
+
+.category-filter,
+.sort-filter {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.category-filter label,
+.sort-filter label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #555;
+}
+
+.category-filter select,
+.sort-filter select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s;
+}
+
+.category-filter select:focus,
+.sort-filter select:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Selected product styling */
+.produit-item.is-selected {
+  background-color: #e6f7ff;
+  border-color: #91d5ff;
+}
+</style>
+
   
