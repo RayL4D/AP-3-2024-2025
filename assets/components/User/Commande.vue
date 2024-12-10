@@ -10,27 +10,40 @@
       <!-- Liste des produits disponibles -->
       <div class="produits-container">
         <h2>Produits Disponibles</h2>
-        <div v-if="loadingProduits">Chargement des produits...</div>
-        <ul v-else class="produits-list">
-          <li 
-            v-for="produit in produits" 
-            :key="produit.id" 
-            class="produit-item"
-            :class="{ 'is-selected': commande.items.some(item => item.id === produit.id) }">
-            <div class="produit-info">
-              <span class="produit-name">{{ produit.nom }}</span>
-              <span class="produit-category">Catégorie : {{ getCategorieName(produit.categorie_id) }}</span>
-              <span class="produit-price">{{ produit.prix.toFixed(2) }} €</span>
-            </div>
-            <button 
-              class="add-button" 
-              @click="ajouterProduit(produit)" 
-              :disabled="loadingCommande" 
-              :aria-label="'Ajouter ' + produit.nom">
-              Ajouter
-            </button>
-          </li>
-        </ul>
+        <div v-if="loadingCategories || loadingProduits">Chargement...</div>
+        <div v-else>
+          <!-- Menu déroulant pour filtrer par catégorie -->
+          <div class="category-filter">
+            <label for="categorySelect">Filtrer par catégorie :</label>
+            <select id="categorySelect" v-model="categorieFiltre">
+              <option value="">Toutes les catégories</option>
+              <option v-for="categorie in categories" :key="categorie.id" :value="categorie.id">
+                {{ categorie.nom }}
+              </option>
+            </select>
+          </div>
+          <ul class="produits-list">
+            <li
+              v-for="produit in produitsFiltres"
+              :key="produit.id"
+              class="produit-item"
+              :class="{ 'is-selected': commande.items.some(item => item.id === produit.id) }"
+            >
+              <div class="produit-info">
+                <span class="produit-name">{{ produit.nom }}</span>
+                <span class="produit-category">Catégorie : {{ getCategorieName(produit.categorie_id) }}</span>
+                <span class="produit-price">{{ produit.prix.toFixed(2) }} €</span>
+              </div>
+              <button
+                class="add-button"
+                @click="ajouterProduit(produit)"
+                :disabled="loadingCommande"
+              >
+                Ajouter
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <!-- Détails de la commande -->
@@ -45,10 +58,11 @@
                 <span class="item-quantity">Quantité : {{ item.quantity }}</span>
               </div>
               <span class="item-price">{{ (item.prix * item.quantity).toFixed(2) }} €</span>
-              <button 
-                class="remove-button" 
-                @click="retirerProduit(item)" 
-                :aria-label="'Retirer ' + item.nom">
+              <button
+                class="remove-button"
+                @click="retirerProduit(item)"
+                :aria-label="'Retirer ' + item.nom"
+              >
                 Retirer
               </button>
             </li>
@@ -57,10 +71,11 @@
             <span>Total :</span>
             <strong>{{ commandeTotal }} €</strong>
           </div>
-          <button 
-            class="cta-button" 
-            @click="validerCommande" 
-            :disabled="!commande.items.length || loadingCommande">
+          <button
+            class="cta-button"
+            @click="validerCommande"
+            :disabled="!commande.items.length || loadingCommande"
+          >
             Valider la commande
           </button>
         </div>
@@ -71,6 +86,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import NavbarClient from "./NavbarClient.vue";
@@ -90,9 +106,17 @@ export default {
       loadingProduits: true,
       loadingCategories: true,
       loadingCommande: true,
+      categorieFiltre: "", // Catégorie sélectionnée pour le filtre
     };
   },
   computed: {
+    produitsFiltres() {
+      // Filtrer les produits selon la catégorie sélectionnée
+      if (!this.categorieFiltre) {
+        return this.produits; // Si aucune catégorie n'est sélectionnée, afficher tous les produits
+      }
+      return this.produits.filter(produit => produit.categorie_id === this.categorieFiltre);
+    },
     commandeTotal() {
       return this.commande.items
         .reduce((sum, item) => sum + item.prix * item.quantity, 0)
@@ -108,7 +132,7 @@ export default {
     async fetchProduits() {
       this.loadingProduits = true;
       try {
-        const response = await fetch('/api/produits');
+        const response = await fetch("/api/produits");
         if (response.ok) {
           this.produits = await response.json();
         } else {
@@ -123,7 +147,7 @@ export default {
     async fetchCategories() {
       this.loadingCategories = true;
       try {
-        const response = await fetch('/api/categories');
+        const response = await fetch("/api/categories");
         if (response.ok) {
           this.categories = await response.json();
         } else {
@@ -142,7 +166,7 @@ export default {
     async fetchCommande() {
       this.loadingCommande = true;
       try {
-        const response = await fetch('/api/orders/current');
+        const response = await fetch("/api/orders/current");
         if (response.ok) {
           const data = await response.json();
           this.commande.items = data.items || [];
@@ -156,7 +180,7 @@ export default {
       }
     },
     ajouterProduit(produit) {
-      const existingItem = this.commande.items.find((item) => item.id === produit.id);
+      const existingItem = this.commande.items.find(item => item.id === produit.id);
       if (existingItem) {
         existingItem.quantity += 1;
       } else {
@@ -164,7 +188,7 @@ export default {
       }
     },
     retirerProduit(produit) {
-      const index = this.commande.items.findIndex((item) => item.id === produit.id);
+      const index = this.commande.items.findIndex(item => item.id === produit.id);
       if (index !== -1) {
         const item = this.commande.items[index];
         item.quantity -= 1;
@@ -174,19 +198,19 @@ export default {
       }
     },
     async validerCommande() {
-      if (!confirm('Êtes-vous sûr de vouloir valider cette commande ?')) {
+      if (!confirm("Êtes-vous sûr de vouloir valider cette commande ?")) {
         return;
       }
       try {
-        const response = await fetch('/api/orders/validate', {
-          method: 'POST',
+        const response = await fetch("/api/orders/validate", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ items: this.commande.items }),
         });
         if (response.ok) {
-          alert('Votre commande a été validée avec succès !');
+          alert("Votre commande a été validée avec succès !");
           this.commande.items = []; // Réinitialiser après validation
         } else {
           alert("Erreur lors de la validation de la commande.");
@@ -198,6 +222,7 @@ export default {
   },
 };
 </script>
+
   
   <style scoped>
   .commande-container {
@@ -286,5 +311,22 @@ export default {
     background-color: #e6f7ff;
     border-color: #91d5ff;
   }
+
+  .category-filter {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.category-filter label {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.category-filter select {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
   </style>
   
