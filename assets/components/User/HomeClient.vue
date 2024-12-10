@@ -7,13 +7,12 @@
         <p class="welcome-text">
           Découvrez nos produits exclusifs et profitez de promotions exceptionnelles.
         </p>
-        <!-- Bouton désactivé si l'utilisateur a déjà une commande en cours -->
+        <!-- Bouton avec texte dynamique en fonction de hasOrder -->
         <button 
-          @click="createOrder" 
-          class="cta-button" 
-          :disabled="hasOrder"
+          @click="handleOrderAction" 
+          class="cta-button"
         >
-          Passer une commande
+          {{ hasOrder ? 'Continuer votre commande' : 'Passer une commande' }}
         </button>
       </div>
       <div class="features-section">
@@ -62,6 +61,15 @@ export default {
         this.hasOrder = data.hasOrder;  // Met à jour l'état en fonction de la réponse
       } catch (error) {
         console.error("Erreur lors de la vérification de la commande :", error);
+      }
+    },
+    async handleOrderAction() {
+      if (this.hasOrder) {
+        // Si une commande est en cours, on redirige pour continuer
+        window.location.href = "/commande";
+      } else {
+        // Sinon, on crée une nouvelle commande
+        this.createOrder();
       }
     },
     async createOrder() {
@@ -184,5 +192,4 @@ export default {
   background-color: #ccc;  /* Couleur grise pour le bouton désactivé */
   cursor: not-allowed;  /* Curseur "non autorisé" */
 }
-
 </style>
