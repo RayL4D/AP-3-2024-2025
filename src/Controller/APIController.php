@@ -503,6 +503,57 @@ public function getUserOrdersAdmin(EntityManagerInterface $entityManager): JsonR
 
     return new JsonResponse($data);
 }
+#[Route('/api/categories-with-products', name: 'categories_with_products', methods: ['GET'])]
+public function getCategoriesWithProducts(CategorieRepository $categorieRepository): JsonResponse
+{
+    $categories = $categorieRepository->findAll();
+    $response = [];
+
+    foreach ($categories as $categorie) {
+        $response[] = [
+            'id' => $categorie->getId(),
+            'nom' => $categorie->getNom(),
+            'produits' => $categorie->getLesProduits()->map(function ($produit) {
+                return [
+                    'id' => $produit->getId(),
+                    'nom' => $produit->getNom(),
+                ];
+            })->toArray(),
+        ];
+    }
+
+    return new JsonResponse($response);
+}
+
+#[Route('/api/produits/{id}/details', name: 'app_api_get_produit_details', methods: ['GET'])]
+public function getProduitDetails(int $id, ProduitRepository $produitRepository): JsonResponse
+{
+    // Rechercher le produit par son ID
+    $produit = $produitRepository->find($id);
+
+    if (!$produit) {
+        return new JsonResponse(['status' => 'Produit non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+    }
+
+    // Récupérer les détails du produit (nom, prix, catégorie, stock, emplacement)
+    $data = [
+        'id' => $produit->getId(),
+        'nom' => $produit->getNom(),
+        'prix' => $produit->getPrix(),
+        'categorie' => $produit->getLaCategorie() ? [
+            'id' => $produit->getLaCategorie()->getId(),
+            'nom' => $produit->getLaCategorie()->getNom(),
+        ] : null,
+        'quantiteStock' => $produit->getLeStock() ? $produit->getLeStock()->getQuantiteStock() : null,
+        'emplacement' => $produit->getLeEmplacement() ? [
+            'x' => $produit->getLeEmplacement()->getX(),
+            'y' => $produit->getLeEmplacement()->getY(),
+        ] : null,
+    ];
+
+    return new JsonResponse($data);
+}
+
 
 
 

@@ -29,20 +29,29 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/admin/graphique', name: 'app_admin_graphique')]
+    public function getLesGraphiquesAdmin(): Response
+    {
+
+        return $this->render('admin/graphique.html.twig', [
+            'controller_name' => 'AdminController',
+        ]);
+    }
+
+    #[Route('/admin/commande', name: 'app_admin_commande')]
+    public function getLesCommandesAdmin(): Response
+    {
+
+        return $this->render('admin/commande.html.twig', [
+            'controller_name' => 'AdminController',
+        ]);
+    }
+
     #[Route('/admin/categories', name: 'app_admin_categorie')]
     public function getCategories(): Response
     {
 
         return $this->render('admin/categorie.html.twig', [
-            'controller_name' => 'AdminController',
-        ]);
-    }
-    
-    #[Route('/admin/commande', name: 'app_admin_categorie')]
-    public function getLesCommandesAdmin(): Response
-    {
-
-        return $this->render('admin/commande.html.twig', [
             'controller_name' => 'AdminController',
         ]);
     }

@@ -8,6 +8,7 @@ import CategoriesApp from './components/Admin/Categories.vue';
 import HomeAdmin from './components/Admin/HomeAdmin.vue';
 import HomeClient from './components/User/HomeClient.vue';
 import CommandeApp from './components/User/Commande.vue'
+import GraphiqueApp from './components/Admin/Graphique.vue'
 import ACommandeApp from './components/Admin/Commande.vue'
 import AncienneCommandeApp from './components/User/AncienneCommande.vue'
 
@@ -16,5 +17,6 @@ createApp(ProduitsApp).mount('#produits-app')
 createApp(HomeAdmin).mount('#admin-app')
 createApp(HomeClient).mount('#client-app')
 createApp(CommandeApp).mount('#commande-app')
+createApp(GraphiqueApp).mount('#graphique-app')
 createApp(ACommandeApp).mount('#a-commande-app')
 createApp(AncienneCommandeApp).mount('#ancienne-commande-app')

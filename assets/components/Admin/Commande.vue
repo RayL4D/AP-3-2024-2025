@@ -77,7 +77,7 @@ export default {
     },
     goToDetails() {
       // Redirige vers la page /commande
-      window.location.href = "/commande";
+      window.location.href = "/admin/graphique";
     },
   },
   async mounted() {
