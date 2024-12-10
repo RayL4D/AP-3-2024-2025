@@ -32,6 +32,7 @@
             </select>
           </div>
 
+          <!-- Afficher les produits -->
           <ul class="produits-list">
             <li
               v-for="produit in produitsFiltresTries"
@@ -70,7 +71,7 @@
               <span class="item-price">{{ (item.prix * item.quantity).toFixed(2) }} €</span>
               <button
                 class="remove-button"
-                @click="retirerProduit(item)"
+                @click="decrementProduit(item)"
                 :aria-label="'Retirer ' + item.nom"
               >
                 Retirer
@@ -85,6 +86,8 @@
             class="cta-button"
             @click="validerCommande"
             :disabled="!commande.items.length || loadingCommande"
+            aria-disabled="!commande.items.length || loadingCommande"
+            aria-label="Valider la commande"
           >
             Valider la commande
           </button>
@@ -97,8 +100,6 @@
   </div>
 </template>
 
-
-
 <script>
 import NavbarClient from "./NavbarClient.vue";
 
@@ -109,31 +110,26 @@ export default {
   },
   data() {
     return {
-      produits: [], // Liste des produits disponibles
-      categories: [], // Liste des catégories
+      produits: [],
+      categories: [],
       commande: {
-        items: [], // Liste des produits dans la commande
+        items: [],
       },
       loadingProduits: true,
       loadingCategories: true,
       loadingCommande: true,
-      categorieFiltre: "", // Catégorie sélectionnée pour le filtre
-      ordreTri: "asc", // Ordre de tri : "asc" pour croissant, "desc" pour décroissant
+      categorieFiltre: "",
+      ordreTri: "asc",
+      produitId: 1,
+      quantite: 1,
+      commandeId: null,
     };
   },
   computed: {
-    produitsFiltres() {
-      // Filtrer les produits selon la catégorie sélectionnée
-      if (!this.categorieFiltre) {
-        return this.produits;
-      }
-      return this.produits.filter(produit => produit.categorie_id === this.categorieFiltre);
-    },
     produitsFiltresTries() {
-      // Trier les produits filtrés selon l'ordre sélectionné
-      return [...this.produitsFiltres].sort((a, b) => {
-        return this.ordreTri === "asc" ? a.prix - b.prix : b.prix - a.prix;
-      });
+      return this.produits
+        .filter(produit => !this.categorieFiltre || produit.categorie_id === this.categorieFiltre)
+        .sort((a, b) => this.ordreTri === "asc" ? a.prix - b.prix : b.prix - a.prix);
     },
     commandeTotal() {
       return this.commande.items
@@ -187,9 +183,16 @@ export default {
         const response = await fetch("/api/orders/current");
         if (response.ok) {
           const data = await response.json();
+          this.commandeId = data.id;
           this.commande.items = data.items || [];
         } else {
-          console.error("Erreur lors de la récupération de la commande");
+          const createResponse = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const newOrderData = await createResponse.json();
+          this.commandeId = newOrderData.id;
+          this.commande.items = newOrderData.items || [];
         }
       } catch (error) {
         console.error("Erreur réseau :", error);
@@ -204,15 +207,40 @@ export default {
       } else {
         this.commande.items.push({ ...produit, quantity: 1 });
       }
+      this.addProduitToCommande(produit);
     },
-    retirerProduit(produit) {
-      const index = this.commande.items.findIndex(item => item.id === produit.id);
-      if (index !== -1) {
-        const item = this.commande.items[index];
-        item.quantity -= 1;
-        if (item.quantity <= 0) {
-          this.commande.items.splice(index, 1);
+    async decrementProduit(produit) {
+      try {
+        const response = await fetch(`/api/orders/${this.commandeId}/remove-detail`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ produit_id: produit.id }),
+        });
+
+        if (response.ok) {
+          const existingItem = this.commande.items.find(item => item.id === produit.id);
+          if (existingItem) {
+            existingItem.quantity -= 1;
+            if (existingItem.quantity <= 0) {
+              this.commande.items = this.commande.items.filter(item => item.id !== produit.id);
+            }
+          }
+        } else {
+          console.error("Erreur lors de la décrémentation.");
         }
+      } catch (error) {
+        console.error("Erreur réseau :", error);
+      }
+    },
+    async addProduitToCommande(produit) {
+      try {
+        await fetch(`/api/orders/${this.commandeId}/add-detail`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ produit_id: produit.id, quantite: this.quantite }),
+        });
+      } catch (error) {
+        console.error("Erreur lors de l'ajout du produit :", error);
       }
     },
     async validerCommande() {
@@ -222,16 +250,14 @@ export default {
       try {
         const response = await fetch("/api/orders/validate", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ items: this.commande.items }),
         });
         if (response.ok) {
-          alert("Votre commande a été validée avec succès !");
-          this.commande.items = []; // Réinitialiser après validation
+          alert("Commande validée !");
+          this.commande.items = [];
         } else {
-          alert("Erreur lors de la validation de la commande.");
+          alert("Erreur lors de la validation.");
         }
       } catch (error) {
         console.error("Erreur réseau :", error);
@@ -242,8 +268,25 @@ export default {
 </script>
 
 
-  
+
 <style scoped>
+
+/* Styles ajoutés pour l'affichage d'un message d'erreur */
+.error-message {
+  color: red;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.commande-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f3f4f6;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 .commande-container {
   max-width: 900px;
   margin: 0 auto;
@@ -403,11 +446,8 @@ export default {
   outline: none;
 }
 
-/* Selected product styling */
 .produit-item.is-selected {
   background-color: #e6f7ff;
   border-color: #91d5ff;
 }
 </style>
-
-  

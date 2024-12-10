@@ -263,33 +263,104 @@ class APIController extends AbstractController
     #[Route('/api/orders/{id}/add-detail', name: 'app_api_add_detail', methods: ['POST'])]
     public function addDetail(Request $request, int $id, EntityManagerInterface $entityManager, ProduitRepository $produitRepository): JsonResponse
     {
+        // Récupérer la commande par ID
+        $commande = $entityManager->getRepository(Commande::class)->find($id);
+    
+        if (!$commande) {
+            return new JsonResponse(['status' => 'Commande non trouvée'], JsonResponse::HTTP_NOT_FOUND);
+        }
+    
+        // Décoder le contenu JSON de la requête
+        $data = json_decode($request->getContent(), true);
+    
+        // Vérifier si les données nécessaires sont présentes
+        if (!isset($data['produit_id'], $data['quantite'])) {
+            return new JsonResponse(['status' => 'Données invalides'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+    
+        // Récupérer le produit
+        $produit = $produitRepository->find($data['produit_id']);
+        if (!$produit) {
+            return new JsonResponse(['status' => 'Produit non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+        }
+    
+        // Vérifier si un détail existe déjà pour ce produit dans la commande
+        $detailExist = $entityManager->getRepository(Detail::class)->findOneBy([
+            'laCommande' => $commande,
+            'leProduit' => $produit
+        ]);
+    
+        if ($detailExist) {
+            // Si le produit existe déjà dans la commande, on met à jour la quantité
+            $detailExist->setQuantiteProduit($detailExist->getQuantiteProduit() + $data['quantite']);
+        } else {
+            // Sinon, on crée un nouveau détail
+            $detail = new Detail();
+            $detail->setLaCommande($commande);
+            $detail->setLeProduit($produit);
+            $detail->setQuantiteProduit($data['quantite']);
+            
+            $entityManager->persist($detail);
+        }
+    
+        // Sauvegarder les modifications dans la base de données
+        $entityManager->flush();
+    
+        return new JsonResponse(['status' => 'Produit ajouté ou quantité mise à jour dans la commande'], JsonResponse::HTTP_CREATED);
+    }
+    
+    #[Route('/api/orders/{id}/remove-detail', name: 'app_api_remove_detail', methods: ['POST'])]
+    public function removeDetail(
+        Request $request,
+        int $id,
+        EntityManagerInterface $entityManager,
+        ProduitRepository $produitRepository
+    ): JsonResponse {
+        // Récupérer la commande par ID
         $commande = $entityManager->getRepository(Commande::class)->find($id);
 
         if (!$commande) {
             return new JsonResponse(['status' => 'Commande non trouvée'], JsonResponse::HTTP_NOT_FOUND);
         }
 
+        // Décoder le contenu JSON de la requête
         $data = json_decode($request->getContent(), true);
 
-        if (!isset($data['produit_id'], $data['quantite'])) {
+        // Vérifier si les données nécessaires sont présentes
+        if (!isset($data['produit_id'])) {
             return new JsonResponse(['status' => 'Données invalides'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
+        // Récupérer le produit
         $produit = $produitRepository->find($data['produit_id']);
         if (!$produit) {
             return new JsonResponse(['status' => 'Produit non trouvé'], JsonResponse::HTTP_NOT_FOUND);
         }
 
-        $detail = new Detail();
-        $detail->setLaCommande($commande);
-        $detail->setLeProduit($produit);
-        $detail->setQuantiteProduit($data['quantite']);
+        // Vérifier si un détail existe pour ce produit dans la commande
+        $detail = $entityManager->getRepository(Detail::class)->findOneBy([
+            'laCommande' => $commande,
+            'leProduit' => $produit
+        ]);
 
-        $entityManager->persist($detail);
+        if (!$detail) {
+            return new JsonResponse(['status' => 'Produit non présent dans la commande'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        // Décrémenter la quantité ou supprimer le détail
+        $currentQuantity = $detail->getQuantiteProduit();
+        if ($currentQuantity > 1) {
+            $detail->setQuantiteProduit($currentQuantity - 1);
+        } else {
+            $entityManager->remove($detail);
+        }
+
+        // Sauvegarder les modifications dans la base de données
         $entityManager->flush();
 
-        return new JsonResponse(['status' => 'Produit ajouté à la commande'], JsonResponse::HTTP_CREATED);
+        return new JsonResponse(['status' => 'Produit décrémenté ou supprimé de la commande'], JsonResponse::HTTP_OK);
     }
+
 
 
     #[Route('/api/orders/{id}/details', name: 'app_api_get_order_details', methods: ['GET'])]
