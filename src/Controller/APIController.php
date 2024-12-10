@@ -400,6 +400,44 @@ public function getUserOrders(EntityManagerInterface $entityManager, Security $s
     return new JsonResponse($data);
 }
 
+#[Route('/api/orders/user/admin', name: 'app_api_user_orders_admin', methods: ['GET'])]
+public function getUserOrdersAdmin(EntityManagerInterface $entityManager): JsonResponse
+{
+    $commandes = $entityManager->getRepository(Commande::class)->findAll();
+
+    $data = array_map(function ($commande) {
+        $user = $commande->getLeUser();
+
+        return [
+            'id' => $commande->getId(),
+            'date' => $commande->getDate()->format('Y-m-d H:i:s'),
+            'statut' => $commande->getStatut(),
+            'created_by' => $user ? [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'nom' => $user->getNom(),
+            ] : null,
+            'details' => array_map(function ($detail) {
+                $produit = $detail->getLeProduit();
+                $stock = $produit->getLeStock();
+
+                return [
+                    'produit_id' => $produit->getId(),
+                    'produit_nom' => $produit->getNom(),
+                    'quantite' => $detail->getQuantiteProduit(),
+                    'prix' => $produit->getPrix(),
+                    'stock_quantite' => $stock ? $stock->getQuantiteStock() : null,
+                ];
+            }, $commande->getLesDetails()->toArray()),
+        ];
+    }, $commandes);
+
+    return new JsonResponse($data);
+}
+
+
+
+
 
 
     

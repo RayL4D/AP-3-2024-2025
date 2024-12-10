@@ -38,4 +38,12 @@ class AdminController extends AbstractController
         ]);
     }
     
+    #[Route('/admin/commande', name: 'app_admin_categorie')]
+    public function getLesCommandesAdmin(): Response
+    {
+
+        return $this->render('admin/commande.html.twig', [
+            'controller_name' => 'AdminController',
+        ]);
+    }
 }

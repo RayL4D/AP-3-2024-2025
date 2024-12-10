@@ -5,6 +5,7 @@
         <li><a href="/home"><i class="fas fa-box"></i> Accès Client</a></li>
         <li><a href="/admin/categories"><i class="fas fa-box"></i> Categories</a></li>
         <li><a href="/admin/produits"><i class="fas fa-box"></i> Produits</a></li>
+        <li><a href="/admin/commande"><i class="fas fa-box"></i> Commandes</a></li>
         <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
         <!-- Ajoutez d'autres éléments de navigation ici -->
       </ul>
