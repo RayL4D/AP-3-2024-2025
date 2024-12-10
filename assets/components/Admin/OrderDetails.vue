@@ -5,8 +5,10 @@
     <!-- Vue des commandes administrateurs -->
     <div v-if="!selectedOrder" class="commandes-container">
       <h2 class="title">Commandes Administrateur</h2>
+
       <div v-if="loading" class="loading">Chargement des commandes...</div>
       <div v-else-if="orders.length === 0" class="no-orders">Aucune commande disponible.</div>
+
       <div v-else>
         <ul class="orders-list">
           <li v-for="order in orders" :key="order.id" class="order-item">
@@ -52,7 +54,7 @@
       </ul>
 
       <h3>Itinéraire pour récupérer les produits :</h3>
-      <div id="map" style="height: 400px; width: 100%"></div>  <!-- Taille définie -->
+      <canvas id="routeChart" width="400" height="200"></canvas>
 
       <button @click="backToOrders" class="btn-primary">Retour aux commandes</button>
     </div>
@@ -61,7 +63,7 @@
 
 <script>
 import Navbar from './NavbarAdmin.vue';
-import L from 'leaflet';  // Import de Leaflet
+import { Chart } from 'chart.js';
 
 export default {
   name: "AdminOrders",
@@ -103,37 +105,48 @@ export default {
       this.selectedOrder = null; // Retour à la liste des commandes
     },
     displayRoute(details) {
-      // Vérification que des détails existent avant de dessiner
-      if (details.length === 0) {
-        console.log("Aucun produit trouvé pour cette commande.");
-        return;
-      }
-
       // Simuler les coordonnées des produits dans un entrepôt
       const productLocations = details.map(detail => ({
         name: detail.produit_nom,
-        lat: Math.random() * 90, // Coordonnée lat simulée
-        lng: Math.random() * 180, // Coordonnée lng simulée
+        x: Math.random() * 100, // Coordonnée X simulée
+        y: Math.random() * 100, // Coordonnée Y simulée
       }));
 
-      // Attendre que le DOM soit prêt
-      this.$nextTick(() => {
-        // Initialiser la carte avec Leaflet
-        const map = L.map('map').setView([48.8566, 2.3522], 13); // Position par défaut (Paris)
+      // Algorithme basique pour afficher un itinéraire (par exemple, juste les produits dans un ordre aléatoire)
+      const routeData = {
+        labels: productLocations.map(item => item.name),
+        datasets: [{
+          label: 'Itinéraire des produits',
+          data: productLocations.map(item => ({x: item.x, y: item.y})),
+          borderColor: '#007bff',
+          fill: false,
+        }],
+      };
 
-        // Ajouter un fond de carte
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        // Ajouter les points des produits sur la carte
-        productLocations.forEach(location => {
-          L.marker([location.lat, location.lng])
-            .addTo(map)
-            .bindPopup(location.name);
-        });
-
-        // Optionnel : calculer l'itinéraire (simplifié)
-        const latlngs = productLocations.map(loc => [loc.lat, loc.lng]);
-        L.polyline(latlngs, {color: 'blue'}).addTo(map);
+      // Créer le graphique avec Chart.js
+      const ctx = document.getElementById('routeChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'scatter',
+        data: routeData,
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              min: 0,
+              max: 100,
+              ticks: {
+                stepSize: 10,
+              },
+            },
+            y: {
+              min: 0,
+              max: 100,
+              ticks: {
+                stepSize: 10,
+              },
+            },
+          },
+        },
       });
     },
   },
@@ -258,9 +271,8 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-#map {
+canvas {
   margin-top: 20px;
-  height: 400px; /* Fixez la hauteur pour éviter l'agrandissement de la page */
-  width: 100%;   /* Assurez-vous que la carte prend toute la largeur du conteneur */
+  max-width: 100%;
 }
 </style>

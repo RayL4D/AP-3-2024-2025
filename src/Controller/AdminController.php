@@ -55,4 +55,13 @@ class AdminController extends AbstractController
             'controller_name' => 'AdminController',
         ]);
     }
+
+    #[Route('/admin/orderdetail', name: 'app_admin_order_detail')]
+    public function getorderdetail(): Response
+    {
+
+        return $this->render('admin/orderDetail.html.twig', [
+            'controller_name' => 'AdminController',
+        ]);
+    }
 }

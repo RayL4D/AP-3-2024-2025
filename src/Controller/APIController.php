@@ -554,11 +554,103 @@ public function getProduitDetails(int $id, ProduitRepository $produitRepository)
     return new JsonResponse($data);
 }
 
+#[Route('/api/shortest-path', name: 'app_api_shortest_path', methods: ['POST'])]
+public function calculateShortestPath(Request $request, EntityManagerInterface $entityManager): JsonResponse
+{
+    // Récupérer les emplacements des produits
+    $data = json_decode($request->getContent(), true);
+    $produitsIds = $data['produits_ids'];
 
+    $emplacements = [];
+    foreach ($produitsIds as $id) {
+        $produit = $entityManager->getRepository(Produit::class)->find($id);
+        if ($produit && $produit->getLeEmplacement()) {
+            $emplacements[] = [
+                'id' => $produit->getId(),
+                'x' => $produit->getLeEmplacement()->getX(),
+                'y' => $produit->getLeEmplacement()->getY(),
+            ];
+        }
+    }
 
+    // Appeler l'algorithme de Dijkstra pour calculer le plus court chemin
+    $shortestPath = $this->calculateDijkstra($emplacements);
 
+    return new JsonResponse([
+        'status' => 'Shortest path calculated',
+        'path' => $shortestPath
+    ]);
+}
 
+private function calculateDijkstra(array $emplacements): array
+{
+    // Créer une matrice de distances entre chaque emplacement
+    $distances = [];
+    $visited = [];
+    $previous = [];
+    $nodes = [];
 
+    // Initialisation des nœuds et des distances
+    foreach ($emplacements as $i => $from) {
+        $nodes[$from['id']] = $from;
+        $distances[$from['id']] = PHP_INT_MAX;
+        $visited[$from['id']] = false;
+        $previous[$from['id']] = null;
+    }
 
-    
+    $start = $emplacements[0]['id'];
+    $distances[$start] = 0;
+
+    // Calculer toutes les distances possibles entre les emplacements
+    while (!empty($nodes)) {
+        // Trouver le nœud avec la distance minimale
+        $minDistance = PHP_INT_MAX;
+        $currentNode = null;
+
+        foreach ($nodes as $id => $node) {
+            if (!$visited[$id] && $distances[$id] < $minDistance) {
+                $minDistance = $distances[$id];
+                $currentNode = $id;
+            }
+        }
+
+        if ($currentNode === null) break;
+
+        // Marquer comme visité
+        $visited[$currentNode] = true;
+
+        // Calculer les distances pour les voisins (tous les autres emplacements)
+        foreach ($nodes as $neighborId => $neighbor) {
+            if ($neighborId === $currentNode) continue;
+
+            // Calculer la distance entre le nœud courant et son voisin
+            $distance = $this->calculateDistance($nodes[$currentNode], $neighbor);
+
+            $newDist = $distances[$currentNode] + $distance;
+            if ($newDist < $distances[$neighborId]) {
+                $distances[$neighborId] = $newDist;
+                $previous[$neighborId] = $currentNode;
+            }
+        }
+
+        unset($nodes[$currentNode]);
+    }
+
+    // Reconstituer le chemin le plus court
+    $path = [];
+    $node = end($emplacements)['id']; // Dernier produit comme destination
+    while ($previous[$node] !== null) {
+        array_unshift($path, $node);
+        $node = $previous[$node];
+    }
+    array_unshift($path, $start);
+
+    return $path;
+}
+
+private function calculateDistance(array $from, array $to): float
+{
+    // Calculer la distance euclidienne entre deux points
+    return sqrt(pow($to['x'] - $from['x'], 2) + pow($to['y'] - $from['y'], 2));
+} 
 }
