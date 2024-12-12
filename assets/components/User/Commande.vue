@@ -7,98 +7,101 @@
         <p class="commande-subtitle">Ajoutez des produits et vérifiez les détails avant validation.</p>
       </div>
 
-      <!-- Liste des produits disponibles -->
-      <div class="produits-container">
-        <h2>Produits Disponibles</h2>
-        <div v-if="loadingCategories || loadingProduits">Chargement...</div>
-        <div v-else>
-          <!-- Filtre par catégorie -->
-          <div class="category-filter">
-            <label for="categorySelect">Filtrer par catégorie :</label>
-            <select id="categorySelect" v-model="categorieFiltre">
-              <option value="">Toutes les catégories</option>
-              <option v-for="categorie in categories" :key="categorie.id" :value="categorie.id">
-                {{ categorie.nom }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Trier par prix -->
-          <div class="sort-filter">
-            <label for="sortSelect">Trier par prix :</label>
-            <select id="sortSelect" v-model="ordreTri">
-              <option value="asc">Croissant</option>
-              <option value="desc">Décroissant</option>
-            </select>
-          </div>
-
-          <!-- Afficher les produits -->
-          <ul class="produits-list">
-            <li
-              v-for="produit in produitsFiltresTries"
-              :key="produit.id"
-              class="produit-item"
-              :class="{ 'is-selected': commande.items.some(item => item.id === produit.id) }"
-            >
-              <div class="produit-info">
-                <span class="produit-name">{{ produit.nom }}</span>
-                <span class="produit-category">Catégorie : {{ getCategorieName(produit.categorie_id) }}</span>
-                <span class="produit-price">{{ produit.prix.toFixed(2) }} €</span>
+      <!-- Section principale -->
+      <div class="commande-main">
+        <!-- Liste des produits disponibles -->
+        <div class="produits-container">
+          <h2>Produits Disponibles</h2>
+          <div v-if="loadingCategories || loadingProduits">Chargement...</div>
+          <div v-else>
+            <!-- Filtre par catégorie et tri -->
+            <div class="filters">
+              <div class="category-filter">
+                <label for="categorySelect">Filtrer par catégorie :</label>
+                <select id="categorySelect" v-model="categorieFiltre">
+                  <option value="">Toutes les catégories</option>
+                  <option v-for="categorie in categories" :key="categorie.id" :value="categorie.id">
+                    {{ categorie.nom }}
+                  </option>
+                </select>
               </div>
-              <button
-                class="add-button"
-                @click="ajouterProduit(produit)"
-                :disabled="loadingCommande"
+              <div class="sort-filter">
+                <label for="sortSelect">Trier par prix :</label>
+                <select id="sortSelect" v-model="ordreTri">
+                  <option value="asc">Croissant</option>
+                  <option value="desc">Décroissant</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Afficher les produits -->
+            <ul class="produits-list">
+              <li
+                v-for="produit in produitsFiltresTries"
+                :key="produit.id"
+                class="produit-item"
+                :class="{ 'is-selected': commande.items.some(item => item.id === produit.id) }"
               >
-                Ajouter
-              </button>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-
-            <!-- Produits déjà ajoutés -->
-            <div class="commande-historique">
-        <h2>Produits déjà ajoutés</h2>
-        <div v-if="loadingCommande">Chargement des produits déjà ajoutés...</div>
-        <div v-else-if="produitsAnciens.length">
-          <ul class="produits-anciens-list">
-            <li v-for="produit in produitsAnciens" :key="produit.produit_id" class="produit-ancien-item">
-              <div class="produit-info">
-                <span class="produit-name">{{ produit.produit_nom }}</span>
-                <span class="produit-quantity">Quantité : {{ produit.quantite }}</span>
-                <span class="produit-price">Prix unitaire : {{ produit.prix.toFixed(2) }} €</span>
-                <span class="produit-total">Total : {{ (produit.quantite * produit.prix).toFixed(2) }} €</span>
+                <div class="produit-info">
+                  <span class="produit-name">{{ produit.nom }}</span>
+                  <span class="produit-category">Catégorie : {{ getCategorieName(produit.categorie_id) }}</span>
+                  <span class="produit-price">{{ produit.prix.toFixed(2) }} €</span>
+                </div>
                 <button
-            class="remove-button"
-            @click="decrementProduit(produit)"
-            :aria-label="'Retirer ' + produit.produit_nom"
-          >
-            Retirer
-          </button>
-              </div>
-            </li>
-          </ul>
-          <div class="commande-total">
-            <span>Total :</span>
-            <strong>{{ commandeTotal }} €</strong>
+                  class="add-button"
+                  @click="ajouterProduit(produit)"
+                  :disabled="loadingCommande"
+                >
+                  Ajouter
+                </button>
+              </li>
+            </ul>
           </div>
-          <button
-            class="cta-button"
-            @click="validerCommande"
-            aria-label="Valider la commande"
-          >
-            Valider la commande
-          </button>
         </div>
-        <div v-else>
-          <p>Aucun produit ajouté dans les détails précédents.</p>
+
+        <!-- Détails du panier -->
+        <div class="commande-details">
+          <h2>Votre Panier</h2>
+          <div v-if="loadingCommande">Chargement des produits déjà ajoutés...</div>
+          <div v-else-if="produitsAnciens.length">
+            <ul class="produits-anciens-list">
+              <li v-for="produit in produitsAnciens" :key="produit.produit_id" class="produit-ancien-item">
+                <div class="produit-info">
+                  <span class="produit-name">{{ produit.produit_nom }}</span>
+                  <span class="produit-quantity">Quantité : {{ produit.quantite }}</span>
+                  <span class="produit-price">Prix unitaire : {{ produit.prix.toFixed(2) }} €</span>
+                  <span class="produit-total">Total : {{ (produit.quantite * produit.prix).toFixed(2) }} €</span>
+                </div>
+                <button
+                  class="remove-button"
+                  @click="decrementProduit(produit)"
+                  :aria-label="'Retirer ' + produit.produit_nom"
+                >
+                  Retirer
+                </button>
+              </li>
+            </ul>
+            <div class="commande-total">
+              <span>Total :</span>
+              <strong>{{ commandeTotal }} €</strong>
+            </div>
+            <button
+              class="cta-button"
+              @click="validerCommande"
+              aria-label="Valider la commande"
+            >
+              Valider la commande
+            </button>
+          </div>
+          <div v-else>
+            <p>Aucun produit ajouté dans les détails précédents.</p>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 
 <script>
 import NavbarClient from "./NavbarClient.vue";
@@ -600,5 +603,182 @@ export default {
   background-color: #ccc;
   cursor: not-allowed;
 }
+.commande-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f3f4f6;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
 
+.commande-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.commande-header h1 {
+  font-size: 2rem;
+  color: #333;
+}
+
+.commande-subtitle {
+  color: #666;
+  font-size: 1.1rem;
+  margin-top: 8px;
+}
+
+.commande-main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+}
+
+.produits-container,
+.commande-details {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.produits-container h2,
+.commande-details h2 {
+  font-size: 1.5rem;
+  color: #333;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.filters {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.category-filter,
+.sort-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.produits-list,
+.commande-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.produit-item,
+.commande-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.produit-item:hover,
+.commande-item:hover {
+  background-color: #f0f8ff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.add-button,
+.cta-button,
+.remove-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.add-button:hover,
+.cta-button:hover,
+.remove-button:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.cta-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.commande-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin-top: 15px;
+}
+
+/* Style des produits dans le panier */
+.produits-anciens-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.produit-ancien-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.produit-ancien-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-color: #28a745;
+}
+
+.produit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.produit-name {
+  font-size: 1.2rem;
+  color: #34495e;
+  font-weight: 600;
+}
+
+.produit-quantity,
+.produit-price {
+  font-size: 1rem;
+  color: #7f8c8d;
+}
+
+.produit-total {
+  text-align: right;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.remove-button {
+  background-color: #dc3545;
+}
+
+.remove-button:hover {
+  background-color: #c82333;
+}
 </style>
