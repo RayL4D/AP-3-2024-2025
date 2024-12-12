@@ -96,48 +96,6 @@
           <p>Aucun produit ajouté dans les détails précédents.</p>
         </div>
       </div>
-
-
-      <!-- Détails de la commande -->
-      <div class="commande-details">
-        <h2>Détails de la commande</h2>
-        <div v-if="loadingCommande">Chargement de la commande...</div>
-        <div v-else-if="commande.items.length">
-          <ul class="commande-items">
-            <li v-for="item in commande.items" :key="item.id" class="commande-item">
-              <div class="item-info">
-                <span class="item-name">{{ item.nom }}</span>
-                <span class="item-quantity">Quantité : {{ item.quantity }}</span>
-              </div>
-              <span class="item-price">{{ (item.prix * item.quantity).toFixed(2) }} €</span>
-              <button
-                class="remove-button"
-                @click="decrementProduit(item)"
-                :aria-label="'Retirer ' + item.nom"
-              >
-                Retirer
-              </button>
-            </li>
-          </ul>
-          <div class="commande-total">
-            <span>Total :</span>
-            <strong>{{ commandeTotal }} €</strong>
-          </div>
-          <button
-            class="cta-button"
-            @click="validerCommande"
-            :disabled="!commande.items.length || loadingCommande"
-            aria-disabled="!commande.items.length || loadingCommande"
-            aria-label="Valider la commande"
-          >
-            Valider la commande
-          </button>
-        </div>
-        <div v-else>
-          <p>Votre commande est vide. Ajoutez des articles pour commencer !</p>
-        </div>
-      </div>
-
     </div>
   </div>
 </template>
@@ -257,15 +215,26 @@ export default {
     }
   },
 
-    ajouterProduit(produit) {
-      const existingItem = this.commande.items.find(item => item.id === produit.id);
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
-        this.commande.items.push({ ...produit, quantity: 1 });
-      }
-      this.addProduitToCommande(produit);
-    },
+  ajouterProduit(produit) {
+  const existingItem = this.commande.items.find(item => item.id === produit.id);
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    this.commande.items.push({ ...produit, quantity: 1 });
+  }
+
+  // Ajout immédiat dans produitsAnciens pour l'affichage dans "Produits déjà ajoutés"
+  const existingProduitAncien = this.produitsAnciens.find(item => item.produit_id === produit.id);
+  if (existingProduitAncien) {
+    existingProduitAncien.quantite += 1; // Incrémenter la quantité si déjà présent
+  } else {
+    this.produitsAnciens.push({ produit_id: produit.id, produit_nom: produit.nom, quantite: 1, prix: produit.prix });
+  }
+
+  // Appeler la méthode pour envoyer la mise à jour au serveur
+  this.addProduitToCommande(produit);
+},
+
 
     async decrementProduit(produit) {
     try {
