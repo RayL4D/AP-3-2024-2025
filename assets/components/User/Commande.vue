@@ -49,7 +49,7 @@
                 </div>
                 <button
                   class="add-button"
-                  @click="ajouterProduit(produit)"
+                  @click="ajouterProduit(produit) + decrementStock(produit)"
                   :disabled="loadingCommande"
                 >
                   Ajouter
@@ -219,7 +219,7 @@ export default {
   },
 
   ajouterProduit(produit) {
-
+    
   // Ajout immédiat dans produitsAnciens pour l'affichage dans "Produits déjà ajoutés"
   const existingProduitAncien = this.produitsAnciens.find(item => item.produit_id === produit.id);
   if (existingProduitAncien) {
@@ -228,11 +228,30 @@ export default {
     this.produitsAnciens.push({ produit_id: produit.id, produit_nom: produit.nom, quantite: 1, prix: produit.prix });
   }
 
+
   // Appeler la méthode pour envoyer la mise à jour au serveur
   this.addProduitToCommande(produit);
+
 },
 
+async decrementStock(produit) {
+  try {
+    // Si le stock est géré par une entité distincte, utilisez l'id de l'entité stock
+    const response = await fetch(`/api/stock/${produit.id}/decrement`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantite: 1 }), // Décrémente de 1
+    });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      alert(`Erreur: ${errorData.status}`);
+    }
+  } catch (error) {
+    console.error('Erreur réseau lors de la décrémentation du stock:', error);
+    alert('Erreur réseau');
+  }
+},
     async decrementProduit(produit) {
     try {
       // Si le produit existe déjà dans la commande
@@ -271,6 +290,7 @@ export default {
       console.error("Erreur réseau :", error);
     }
   },
+
     async addProduitToCommande(produit) {
       try {
         await fetch(`/api/orders/${this.commandeId}/add-detail`, {

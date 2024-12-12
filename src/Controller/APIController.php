@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Entity\Commande;
 use App\Entity\Detail;
+use App\Repository\StockRepository;
 use App\Repository\UserRepository;
 use Symfony\Bundle\SecurityBundle\Security;
 
@@ -552,6 +553,49 @@ public function getProduitDetails(int $id, ProduitRepository $produitRepository)
     ];
 
     return new JsonResponse($data);
+}
+
+
+#[Route('/api/stock/{id}/decrement', name: 'app_api_decrement_stock', methods: ['POST'])]
+public function decrementStock(
+    int $id,
+    Request $request,
+    EntityManagerInterface $entityManager,
+    StockRepository $stockRepository
+): JsonResponse {
+    // Récupérer l'entité Stock par son ID
+    $stock = $stockRepository->find($id);
+
+    if (!$stock) {
+        return new JsonResponse(['status' => 'Stock non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+    }
+
+    // Décoder les données de la requête pour obtenir la quantité à décrémenter
+    $data = json_decode($request->getContent(), true);
+
+    if (!isset($data['quantite']) || $data['quantite'] <= 0) {
+        return new JsonResponse(['status' => 'Quantité invalide'], JsonResponse::HTTP_BAD_REQUEST);
+    }
+
+    $quantiteADecrementer = (int) $data['quantite'];
+
+    // Vérifier si le stock est suffisant
+    $stockActuel = $stock->getQuantiteStock();
+
+    if ($quantiteADecrementer > $stockActuel) {
+        return new JsonResponse(['status' => 'Stock insuffisant'], JsonResponse::HTTP_BAD_REQUEST);
+    }
+
+    // Décrémenter le stock
+    $stock->setQuantiteStock($stockActuel - $quantiteADecrementer);
+
+    // Sauvegarder les modifications
+    $entityManager->flush();
+
+    return new JsonResponse([
+        'status' => 'Stock décrémenté avec succès',
+        'nouveauStock' => $stock->getQuantiteStock(),
+    ], JsonResponse::HTTP_OK);
 }
 
 
