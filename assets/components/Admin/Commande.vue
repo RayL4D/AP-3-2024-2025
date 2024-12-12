@@ -8,51 +8,56 @@
       <div v-if="loading" class="loading">Chargement des commandes...</div>
       <div v-else-if="orders.length === 0" class="no-orders">Aucune commande disponible.</div>
       <div v-else>
+        <!-- Liste simplifiée des commandes -->
         <ul class="orders-list">
           <li v-for="order in orders" :key="order.id" class="order-item">
-            <div class="order-header">
-              <h3 class="order-title">
-                Commande #{{ order.id }} - {{ order.statut }} ({{ order.date }})
+            <div class="order-summary">
+              <h3>
+                Commande #{{ order.id }} - {{ order.statut }}
               </h3>
-              <p class="order-user">
+              <p>
                 Créée par : {{ order.created_by.nom }} ({{ order.created_by.email }})
               </p>
+              <p>
+                Date : {{ order.date }}
+              </p>
             </div>
-            <ul class="order-details">
-              <li v-for="detail in order.details" :key="detail.produit_id" class="order-detail">
-                <span class="product-name">{{ detail.produit_nom }}</span>
-                <span class="product-quantity">Quantité : {{ detail.quantite }}</span>
-                <span class="product-price">Prix : {{ detail.prix }} €</span>
-                <span class="stock-quantity">
-                  Stock : {{ detail.stock_quantite !== null ? detail.stock_quantite : 'Indisponible' }}
-                </span>
+            <ul class="order-products">
+              <li v-for="detail in order.details" :key="detail.produit_id">
+                <strong>{{ detail.produit_nom }}</strong>
+                - Quantité: {{ detail.quantite }}
+                - Prix: {{ detail.prix }} €
+                - Stock: {{ detail.stock_quantite !== null ? detail.stock_quantite : 'Indisponible' }}
               </li>
             </ul>
-            <div class="order-actions">
-              <button @click="goToDetails(order)" class="btn-primary">
-                Prendre en charge la commande
-              </button>
-            </div>
+            <button @click="goToDetails(order)" class="btn-primary">
+              Prendre en charge la commande
+            </button>
           </li>
         </ul>
       </div>
     </div>
 
-    <!-- Vue des détails de la commande avec itinéraire -->
+    <!-- Vue des détails de la commande -->
     <div v-if="selectedOrder" class="order-details-view">
       <h2>Détails de la Commande #{{ selectedOrder.id }}</h2>
       <p>Statut : {{ selectedOrder.statut }}</p>
       <p>Créée par : {{ selectedOrder.created_by.nom }} ({{ selectedOrder.created_by.email }})</p>
-
       <h3>Détails des produits :</h3>
       <ul>
         <li v-for="detail in selectedOrder.details" :key="detail.produit_id">
-          <strong>{{ detail.produit_nom }}</strong> - Quantité: {{ detail.quantite }} - Prix: {{ detail.prix }} €
+          <strong>{{ detail.produit_nom }}</strong>
+          - Quantité: {{ detail.quantite }}
+          - Prix: {{ detail.prix }} €
         </li>
       </ul>
 
-      <h3>Itinéraire pour récupérer les produits :</h3>
-      <div id="map" style="height: 400px; width: 100%"></div>  <!-- Taille définie -->
+      <h3>Itinéraire optimal pour récupérer les produits :</h3>
+      <ul>
+        <li v-for="(step, index) in optimalRoute" :key="index">
+          Étape {{ index + 1 }} : {{ step }}
+        </li>
+      </ul>
 
       <button @click="backToOrders" class="btn-primary">Retour aux commandes</button>
     </div>
@@ -61,7 +66,6 @@
 
 <script>
 import Navbar from './NavbarAdmin.vue';
-import L from 'leaflet';  // Import de Leaflet
 
 export default {
   name: "AdminOrders",
@@ -70,7 +74,8 @@ export default {
     return {
       orders: [],
       loading: true,
-      selectedOrder: null, // Commande sélectionnée
+      selectedOrder: null,
+      optimalRoute: [], // Stockage de l'itinéraire optimal
     };
   },
   methods: {
@@ -95,46 +100,96 @@ export default {
       }
     },
     goToDetails(order) {
-      // Stocke la commande sélectionnée
       this.selectedOrder = order;
-      this.displayRoute(order.details);
+      this.calculateOptimalRoute(order.details);
     },
     backToOrders() {
-      this.selectedOrder = null; // Retour à la liste des commandes
+      this.selectedOrder = null;
+      this.optimalRoute = [];
     },
-    displayRoute(details) {
-      // Vérification que des détails existent avant de dessiner
-      if (details.length === 0) {
-        console.log("Aucun produit trouvé pour cette commande.");
-        return;
-      }
-
-      // Simuler les coordonnées des produits dans un entrepôt
-      const productLocations = details.map(detail => ({
+    calculateOptimalRoute(details) {
+      // Simuler les coordonnées des produits et un graphe des distances
+      const productLocations = details.map((detail, index) => ({
+        id: index,
         name: detail.produit_nom,
-        lat: Math.random() * 90, // Coordonnée lat simulée
-        lng: Math.random() * 180, // Coordonnée lng simulée
+        lat: Math.random() * 90 - 45,
+        lng: Math.random() * 180 - 90,
       }));
 
-      // Attendre que le DOM soit prêt
-      this.$nextTick(() => {
-        // Initialiser la carte avec Leaflet
-        const map = L.map('map').setView([48.8566, 2.3522], 13); // Position par défaut (Paris)
+      const graph = this.generateGraph(productLocations);
+      const startNode = 0; // Point de départ (simulé)
+      const route = this.dijkstra(graph, startNode);
 
-        // Ajouter un fond de carte
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      // Construire l'itinéraire à partir des indices des nœuds
+      this.optimalRoute = route.map(index => productLocations[index].name);
+    },
+    generateGraph(locations) {
+      const graph = Array.from({ length: locations.length }, () => Array(locations.length).fill(Infinity));
 
-        // Ajouter les points des produits sur la carte
-        productLocations.forEach(location => {
-          L.marker([location.lat, location.lng])
-            .addTo(map)
-            .bindPopup(location.name);
-        });
+      for (let i = 0; i < locations.length; i++) {
+        for (let j = 0; j < locations.length; j++) {
+          if (i !== j) {
+            const distance = this.calculateDistance(locations[i], locations[j]);
+            graph[i][j] = distance;
+          }
+        }
+      }
 
-        // Optionnel : calculer l'itinéraire (simplifié)
-        const latlngs = productLocations.map(loc => [loc.lat, loc.lng]);
-        L.polyline(latlngs, {color: 'blue'}).addTo(map);
-      });
+      return graph;
+    },
+    calculateDistance(pointA, pointB) {
+      // Formule de distance simplifiée (Euclidienne)
+      return Math.sqrt(
+        Math.pow(pointA.lat - pointB.lat, 2) + Math.pow(pointA.lng - pointB.lng, 2)
+      );
+    },
+    dijkstra(graph, startNode) {
+      const distances = Array(graph.length).fill(Infinity);
+      const visited = Array(graph.length).fill(false);
+      const previousNodes = Array(graph.length).fill(null);
+
+      distances[startNode] = 0;
+
+      for (let i = 0; i < graph.length; i++) {
+        const currentNode = this.findClosestNode(distances, visited);
+        if (currentNode === -1) break; // Aucun nœud atteignable
+
+        visited[currentNode] = true;
+
+        for (let neighbor = 0; neighbor < graph[currentNode].length; neighbor++) {
+          if (!visited[neighbor] && graph[currentNode][neighbor] !== Infinity) {
+            const newDist = distances[currentNode] + graph[currentNode][neighbor];
+            if (newDist < distances[neighbor]) {
+              distances[neighbor] = newDist;
+              previousNodes[neighbor] = currentNode;
+            }
+          }
+        }
+      }
+
+      // Reconstituer le chemin à partir des nœuds précédents
+      const route = [];
+      let currentNode = distances.indexOf(Math.min(...distances));
+
+      while (currentNode !== null) {
+        route.unshift(currentNode);
+        currentNode = previousNodes[currentNode];
+      }
+
+      return route;
+    },
+    findClosestNode(distances, visited) {
+      let minDistance = Infinity;
+      let closestNode = -1;
+
+      for (let i = 0; i < distances.length; i++) {
+        if (!visited[i] && distances[i] < minDistance) {
+          minDistance = distances[i];
+          closestNode = i;
+        }
+      }
+
+      return closestNode;
     },
   },
   mounted() {
@@ -147,27 +202,21 @@ export default {
 .admin-app {
   font-family: 'Arial', sans-serif;
   color: #2c3e50;
-  background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   padding: 1rem;
 }
 
 .commandes-container {
-  max-width: 1200px;
-  margin-top: 2rem;
-  padding: 20px;
+  max-width: 800px;
+  margin: auto;
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .title {
   text-align: center;
-  font-size: 2rem;
-  color: #333;
+  font-size: 1.8rem;
   margin-bottom: 20px;
 }
 
@@ -184,65 +233,39 @@ export default {
 }
 
 .order-item {
-  background: #fff;
-  padding: 20px;
-  margin-bottom: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s, box-shadow 0.3s;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 0;
 }
 
-.order-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-}
-
-.order-header {
-  margin-bottom: 15px;
-}
-
-.order-title {
-  font-size: 1.4rem;
+.order-summary h3 {
+  font-size: 1.2rem;
   color: #333;
+  margin: 0;
 }
 
-.order-user {
-  font-size: 1rem;
+.order-summary p {
+  margin: 5px 0;
   color: #555;
 }
 
-.order-details {
+.order-products {
   list-style: none;
+  margin: 10px 0 0 20px;
   padding: 0;
 }
 
-.order-detail {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 1rem;
-  color: #555;
-}
-
-.product-name {
-  font-weight: bold;
-  color: #007bff;
-}
-
-.order-actions {
-  text-align: right;
-  margin-top: 15px;
+.order-products li {
+  margin: 5px 0;
 }
 
 .btn-primary {
-  background-color: #007bff;
+  margin-top: 10px;
+  padding: 5px 10px;
   color: #fff;
+  background-color: #007bff;
   border: none;
-  padding: 10px 15px;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s ease;
 }
 
 .btn-primary:hover {
@@ -250,17 +273,11 @@ export default {
 }
 
 .order-details-view {
-  max-width: 1200px;
-  margin-top: 2rem;
-  padding: 20px;
+  max-width: 800px;
+  margin: auto;
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-#map {
-  margin-top: 20px;
-  height: 400px; /* Fixez la hauteur pour éviter l'agrandissement de la page */
-  width: 100%;   /* Assurez-vous que la carte prend toute la largeur du conteneur */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
