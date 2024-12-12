@@ -12,8 +12,8 @@
 
       <!-- Liste des commandes -->
       <div v-else>
-        <ul class="orders-list">
-          <li v-for="order in orders" :key="order.id" class="order-item">
+        <div class="orders-list">
+          <div v-for="order in paginatedOrders" :key="order.id" class="order-card">
             <div class="order-header">
               <h3 class="order-title">Commande #{{ order.id }} - {{ order.statut }} ({{ order.date }})</h3>
             </div>
@@ -22,13 +22,21 @@
                 <span class="product-name">{{ detail.produit_nom }}</span>
                 <span class="product-quantity">Quantité commandée : {{ detail.quantite }}</span>
                 <span class="product-price">Prix : {{ detail.prix }} €</span>
-                <span class="stock-quantity">
-                  Quantité en stock : {{ detail.stock_quantite !== null ? detail.stock_quantite : 'Non disponible' }}
-                </span>
               </li>
             </ul>
-          </li>
-        </ul>
+            <!-- Prix total de la commande -->
+            <div class="order-total">
+              <strong>Prix total : {{ getOrderTotal(order) }} €</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <button @click="previousPage" :disabled="currentPage === 1">Précédent</button>
+          <span>Page {{ currentPage }} sur {{ totalPages }}</span>
+          <button @click="nextPage" :disabled="currentPage === totalPages">Suivant</button>
+        </div>
       </div>
     </div>
   </div>
@@ -46,7 +54,21 @@ export default {
     return {
       orders: [],
       loading: true,
+      currentPage: 1,
+      ordersPerPage: 3, // Nombre de commandes par page modifié à 3
     };
+  },
+  computed: {
+    // Calculer les commandes à afficher sur la page actuelle
+    paginatedOrders() {
+      const startIndex = (this.currentPage - 1) * this.ordersPerPage;
+      const endIndex = startIndex + this.ordersPerPage;
+      return this.orders.slice(startIndex, endIndex);
+    },
+    // Calculer le nombre total de pages
+    totalPages() {
+      return Math.ceil(this.orders.length / this.ordersPerPage);
+    },
   },
   mounted() {
     this.fetchOrders(); // Récupération des commandes lors du montage
@@ -64,7 +86,8 @@ export default {
 
         if (response.ok) {
           const data = await response.json();
-          this.orders = data;
+          // Tri des commandes par date (les plus récentes en premier)
+          this.orders = data.sort((a, b) => new Date(b.date) - new Date(a.date));
         } else {
           console.error('Erreur lors de la récupération des commandes');
         }
@@ -74,6 +97,24 @@ export default {
         this.loading = false;
       }
     },
+    // Fonction pour passer à la page précédente
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+    // Fonction pour passer à la page suivante
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+    // Fonction pour calculer le prix total d'une commande
+    getOrderTotal(order) {
+      return order.details.reduce((total, detail) => {
+        return total + (detail.prix * detail.quantite);
+      }, 0).toFixed(2); // Limite à deux décimales
+    },
   },
 };
 </script>
@@ -81,7 +122,7 @@ export default {
 <style scoped>
 .client-app {
   font-family: 'Arial', sans-serif;
-  color: #2c3e50;
+  color: #333;
   background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
   min-height: 100vh;
   display: flex;
@@ -114,21 +155,21 @@ export default {
 }
 
 .orders-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-.order-item {
+.order-card {
   background-color: #fff;
   padding: 20px;
-  margin-bottom: 20px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.order-item:hover {
+.order-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
@@ -140,6 +181,14 @@ export default {
 .order-title {
   font-size: 1.4rem;
   color: #333;
+}
+
+.order-total {
+  text-align: right;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #007bff;
+  margin-top: 20px;
 }
 
 .order-details {
@@ -167,8 +216,7 @@ export default {
 }
 
 .product-quantity,
-.product-price,
-.stock-quantity {
+.product-price {
   color: #333;
 }
 
@@ -176,8 +224,30 @@ export default {
   font-weight: bold;
 }
 
-.stock-quantity {
-  font-size: 0.9rem;
-  color: #888;
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 0 10px;
+}
+
+.pagination button:disabled {
+  background-color: #ccc;
+}
+
+.pagination span {
+  font-size: 1.2rem;
+  color: #333;
 }
 </style>
