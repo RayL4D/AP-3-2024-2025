@@ -70,9 +70,27 @@
                 <span class="produit-quantity">Quantité : {{ produit.quantite }}</span>
                 <span class="produit-price">Prix unitaire : {{ produit.prix.toFixed(2) }} €</span>
                 <span class="produit-total">Total : {{ (produit.quantite * produit.prix).toFixed(2) }} €</span>
+                <button
+                class="remove-button"
+                @click="decrementProduit(produit)"
+                :aria-label="'Retirer ' + produit.nom"
+              >
+                Retirer
+              </button>
               </div>
             </li>
           </ul>
+          <div class="commande-total">
+            <span>Total :</span>
+            <strong>{{ commandeTotal }} €</strong>
+          </div>
+          <button
+            class="cta-button"
+            @click="validerCommande"
+            aria-label="Valider la commande"
+          >
+            Valider la commande
+          </button>
         </div>
         <div v-else>
           <p>Aucun produit ajouté dans les détails précédents.</p>
@@ -290,12 +308,14 @@ export default {
         if (response.ok) {
           alert("Commande validée !");
           this.commande.items = [];
+          window.location.href = "/home";
         } else {
           alert("Erreur lors de la validation.");
         }
       } catch (error) {
         console.error("Erreur réseau :", error);
       }
+      
     },
   },
 };
