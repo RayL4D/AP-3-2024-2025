@@ -57,6 +57,29 @@
         </div>
       </div>
 
+
+            <!-- Produits déjà ajoutés -->
+            <div class="commande-historique">
+        <h2>Produits déjà ajoutés</h2>
+        <div v-if="loadingCommande">Chargement des produits déjà ajoutés...</div>
+        <div v-else-if="produitsAnciens.length">
+          <ul class="produits-anciens-list">
+            <li v-for="produit in produitsAnciens" :key="produit.produit_id" class="produit-ancien-item">
+              <div class="produit-info">
+                <span class="produit-name">{{ produit.produit_nom }}</span>
+                <span class="produit-quantity">Quantité : {{ produit.quantite }}</span>
+                <span class="produit-price">Prix unitaire : {{ produit.prix.toFixed(2) }} €</span>
+                <span class="produit-total">Total : {{ (produit.quantite * produit.prix).toFixed(2) }} €</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div v-else>
+          <p>Aucun produit ajouté dans les détails précédents.</p>
+        </div>
+      </div>
+
+
       <!-- Détails de la commande -->
       <div class="commande-details">
         <h2>Détails de la commande</h2>
@@ -96,6 +119,7 @@
           <p>Votre commande est vide. Ajoutez des articles pour commencer !</p>
         </div>
       </div>
+
     </div>
   </div>
 </template>
@@ -115,6 +139,7 @@ export default {
       commande: {
         items: [],
       },
+      produitsAnciens: [], // Nouveaux produits stockés depuis l'API
       loadingProduits: true,
       loadingCategories: true,
       loadingCommande: true,
@@ -178,28 +203,37 @@ export default {
       return categorie ? categorie.nom : "Catégorie non trouvée";
     },
     async fetchCommande() {
-      this.loadingCommande = true;
-      try {
-        const response = await fetch("/api/orders/current");
-        if (response.ok) {
-          const data = await response.json();
-          this.commandeId = data.id;
-          this.commande.items = data.items || [];
-        } else {
-          const createResponse = await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          const newOrderData = await createResponse.json();
-          this.commandeId = newOrderData.id;
-          this.commande.items = newOrderData.items || [];
-        }
-      } catch (error) {
-        console.error("Erreur réseau :", error);
-      } finally {
-        this.loadingCommande = false;
+    this.loadingCommande = true;
+    try {
+      const response = await fetch("/api/orders/current");
+      if (response.ok) {
+        const data = await response.json();
+        this.commandeId = data.id;
+        this.commande.items = data.items || [];
+
+          // Récupérer les détails des produits déjà ajoutés
+          const detailsResponse = await fetch(`/api/orders/${this.commandeId}/details`);
+          if (detailsResponse.ok) {
+            this.produitsAnciens = await detailsResponse.json(); // Remplir produitsAnciens
+          } else {
+            console.error("Erreur lors de la récupération des détails.");
+          }
+      } else {
+        const createResponse = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const newOrderData = await createResponse.json();
+        this.commandeId = newOrderData.id;
+        this.commande.items = newOrderData.items || [];
       }
-    },
+    } catch (error) {
+      console.error("Erreur réseau :", error);
+    } finally {
+      this.loadingCommande = false;
+    }
+  },
+
     ajouterProduit(produit) {
       const existingItem = this.commande.items.find(item => item.id === produit.id);
       if (existingItem) {
@@ -450,4 +484,111 @@ export default {
   background-color: #e6f7ff;
   border-color: #91d5ff;
 }
+
+.commande-historique {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.commande-historique {
+  background-color: #f8f9fa; /* Couleur légèrement différente pour la section */
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0; /* Bordure subtile */
+}
+
+.commande-historique h2 {
+  font-size: 1.6rem;
+  color: #2c3e50; /* Couleur légèrement différente pour le titre */
+  border-bottom: 3px solid #28a745;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.produits-anciens-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.produit-ancien-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #ffffff; /* Fond blanc pour le contraste */
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.produit-ancien-item:hover {
+  transform: translateY(-2px); /* Effet de "lift" au survol */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-color: #28a745; /* Accentuation de la bordure au survol */
+}
+
+.produit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px; /* Espacement entre les éléments */
+}
+
+.produit-name {
+  font-size: 1.2rem;
+  color: #34495e; /* Plus lisible */
+  font-weight: 600;
+}
+
+.produit-quantity {
+  font-size: 1rem;
+  color: #7f8c8d; /* Couleur plus discrète */
+}
+
+.produit-price,
+.produit-total {
+  font-size: 1rem;
+  color: #28a745;
+  font-weight: bold;
+}
+
+.produit-total {
+  text-align: right;
+  margin-top: 10px;
+}
+
+.produit-action-buttons {
+  display: flex;
+  gap: 10px; /* Espacement entre les boutons */
+}
+
+.produit-action-buttons button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.produit-action-buttons button:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.produit-action-buttons button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
 </style>

@@ -375,7 +375,7 @@ class APIController extends AbstractController
             return [
                 'produit_id' => $detail->getLeProduit()->getId(),
                 'produit_nom' => $detail->getLeProduit()->getNom(),
-                'quantite' => $detail->getQuantite(),
+                'quantite' => $detail->getQuantiteProduit(),
                 'prix' => $detail->getLeProduit()->getPrix(),
             ];
         }, $details->toArray());
@@ -554,6 +554,8 @@ public function getProduitDetails(int $id, ProduitRepository $produitRepository)
     return new JsonResponse($data);
 }
 
+
+/*
 #[Route('/api/shortest-path', name: 'app_api_shortest_path', methods: ['POST'])]
 public function calculateShortestPath(Request $request, EntityManagerInterface $entityManager): JsonResponse
 {
@@ -666,5 +668,5 @@ private function reconstructPath(array $previous, int $start, int $end): array
 
     return $path[0] === $start ? $path : [];
 }
-
+*/
 }
