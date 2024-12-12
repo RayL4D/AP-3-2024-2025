@@ -71,12 +71,12 @@
                 <span class="produit-price">Prix unitaire : {{ produit.prix.toFixed(2) }} €</span>
                 <span class="produit-total">Total : {{ (produit.quantite * produit.prix).toFixed(2) }} €</span>
                 <button
-                class="remove-button"
-                @click="decrementProduit(produit)"
-                :aria-label="'Retirer ' + produit.nom"
-              >
-                Retirer
-              </button>
+            class="remove-button"
+            @click="decrementProduit(produit)"
+            :aria-label="'Retirer ' + produit.produit_nom"
+          >
+            Retirer
+          </button>
               </div>
             </li>
           </ul>
@@ -261,29 +261,45 @@ export default {
       }
       this.addProduitToCommande(produit);
     },
-    async decrementProduit(produit) {
-      try {
-        const response = await fetch(`/api/orders/${this.commandeId}/remove-detail`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ produit_id: produit.id }),
-        });
 
-        if (response.ok) {
-          const existingItem = this.commande.items.find(item => item.id === produit.id);
-          if (existingItem) {
-            existingItem.quantity -= 1;
-            if (existingItem.quantity <= 0) {
-              this.commande.items = this.commande.items.filter(item => item.id !== produit.id);
-            }
-          }
+    async decrementProduit(produit) {
+    try {
+      // Si le produit existe déjà dans la commande
+      const produitCommande = this.commande.items.find(item => item.id === produit.produit_id);
+      if (produitCommande) {
+        if (produitCommande.quantity > 1) {
+          produitCommande.quantity -= 1; // Diminue la quantité
         } else {
-          console.error("Erreur lors de la décrémentation.");
+          // Si la quantité est 1, on supprime l'item de la commande
+          this.commande.items = this.commande.items.filter(item => item.id !== produit.produit_id);
         }
-      } catch (error) {
-        console.error("Erreur réseau :", error);
+      } else {
+        // Si le produit est dans les produits anciens mais pas encore dans la commande
+        const produitAncien = this.produitsAnciens.find(item => item.produit_id === produit.produit_id);
+        if (produitAncien) {
+          if (produitAncien.quantite > 1) {
+            produitAncien.quantite -= 1; // Diminue la quantité
+          } else {
+            // Retirer le produit des produits anciens s'il a une quantité de 1
+            this.produitsAnciens = this.produitsAnciens.filter(item => item.produit_id !== produit.produit_id);
+          }
+        }
       }
-    },
+
+      // Envoyer la mise à jour au serveur pour la commande
+      const response = await fetch(`/api/orders/${this.commandeId}/remove-detail`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ produit_id: produit.produit_id })
+      });
+
+      if (!response.ok) {
+        console.error("Erreur lors de la décrémentation.");
+      }
+    } catch (error) {
+      console.error("Erreur réseau :", error);
+    }
+  },
     async addProduitToCommande(produit) {
       try {
         await fetch(`/api/orders/${this.commandeId}/add-detail`, {
