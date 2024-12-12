@@ -7,7 +7,6 @@
         <p class="welcome-text">
           Découvrez nos produits exclusifs et profitez de promotions exceptionnelles.
         </p>
-        <!-- Bouton avec texte dynamique en fonction de hasOrder -->
         <button 
           @click="handleOrderAction" 
           :disabled="isLoading" 
@@ -45,7 +44,7 @@
         <div v-if="loadingProduits">Chargement des produits...</div>
 
         <div v-else>
-          <!-- Filtrage par catégorie -->
+          <!-- Filtres -->
           <div class="filters">
             <div class="category-filter">
               <label for="categorySelect">Filtrer par catégorie :</label>
@@ -56,11 +55,18 @@
                 </option>
               </select>
             </div>
+            <div class="price-sort">
+              <label for="priceSort">Trier par prix :</label>
+              <select id="priceSort" v-model="prixSort">
+                <option value="asc">Prix croissant</option>
+                <option value="desc">Prix décroissant</option>
+              </select>
+            </div>
           </div>
 
           <!-- Affichage des produits -->
           <div class="produits-grid">
-            <div v-for="produit in produitsFiltres" :key="produit.id" class="produit-item">
+            <div v-for="produit in produitsFiltresTries" :key="produit.id" class="produit-item">
               <div class="produit-info">
                 <span class="produit-name">{{ produit.nom }}</span>
                 <span class="produit-category">Catégorie : {{ getCategorieName(produit.categorie_id) }}</span>
@@ -85,19 +91,27 @@ export default {
   },
   data() {
     return {
-      hasOrder: false,  // Etat de la commande en cours
-      isLoading: false, // Etat de chargement pour les requêtes
-      errorMessage: '', // Message d'erreur en cas de problème
+      hasOrder: false,
+      isLoading: false,
+      errorMessage: '',
       produits: [],
       categories: [],
       categorieFiltre: "",
+      prixSort: "asc", // Valeur par défaut pour le tri
       loadingProduits: true,
       loadingCategories: true,
     };
   },
   computed: {
     produitsFiltres() {
-      return this.produits.filter(produit => !this.categorieFiltre || produit.categorie_id === this.categorieFiltre);
+      return this.produits.filter(produit => 
+        !this.categorieFiltre || produit.categorie_id === this.categorieFiltre
+      );
+    },
+    produitsFiltresTries() {
+      return [...this.produitsFiltres].sort((a, b) => {
+        return this.prixSort === "asc" ? a.prix - b.prix : b.prix - a.prix;
+      });
     },
   },
   mounted() {
@@ -108,12 +122,12 @@ export default {
   methods: {
     async checkOrderStatus() {
       this.isLoading = true;
-      this.errorMessage = ''; // Reset error message
+      this.errorMessage = '';
       try {
         const response = await fetch('/api/orders/check');
         const data = await response.json();
         if (response.ok) {
-          this.hasOrder = data.hasOrder;  // Met à jour l'état en fonction de la réponse
+          this.hasOrder = data.hasOrder;
         } else {
           this.errorMessage = "Impossible de vérifier l'état de la commande. Veuillez réessayer plus tard.";
         }
@@ -126,12 +140,10 @@ export default {
     },
     async handleOrderAction() {
       this.isLoading = true;
-      this.errorMessage = ''; // Reset error message
+      this.errorMessage = '';
       if (this.hasOrder) {
-        // Si une commande est en cours, on redirige pour continuer
         window.location.href = "/commande";
       } else {
-        // Sinon, on crée une nouvelle commande
         await this.createOrder();
       }
     },
@@ -313,8 +325,24 @@ export default {
   margin-bottom: 20px;
 }
 
+/* Style de tri ajouté */
 .filters {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 20px;
+}
+
+.price-sort label {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.price-sort select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
 }
 
 .category-filter label {
