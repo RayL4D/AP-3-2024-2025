@@ -175,10 +175,15 @@ export default {
         .sort((a, b) => this.ordreTri === "asc" ? a.prix - b.prix : b.prix - a.prix);
     },
     commandeTotal() {
-      return this.commande.items
-        .reduce((sum, item) => sum + item.prix * item.quantity, 0)
-        .toFixed(2);
-    },
+    // Calculer le total de la commande en ajoutant les produits actuels et les anciens produits
+    const totalCommandeItems = this.commande.items
+      .reduce((sum, item) => sum + item.prix * item.quantity, 0);
+
+    const totalProduitsAnciens = this.produitsAnciens
+      .reduce((sum, produit) => sum + produit.prix * produit.quantite, 0);
+
+    return (totalCommandeItems + totalProduitsAnciens).toFixed(2);
+  },
   },
   mounted() {
     this.fetchProduits();
