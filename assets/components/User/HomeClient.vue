@@ -1,5 +1,5 @@
 <template>
-  <div class="client-app"> 
+  <div class="client-app">
     <Navbar />
     <div class="dashboard">
       <div class="hero-section">
@@ -10,11 +10,15 @@
         <!-- Bouton avec texte dynamique en fonction de hasOrder -->
         <button 
           @click="handleOrderAction" 
+          :disabled="isLoading" 
           class="cta-button"
         >
-          {{ hasOrder ? 'Continuer votre commande' : 'Passer une commande' }}
+          {{ isLoading ? 'Chargement...' : (hasOrder ? 'Continuer votre commande' : 'Passer une commande') }}
         </button>
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       </div>
+
+      <!-- Section des caractéristiques -->
       <div class="features-section">
         <div class="feature">
           <img src="/images/shopping-cart.png" alt="Shopping Cart" class="feature-icon" />
@@ -32,6 +36,41 @@
           <p>Notre équipe est disponible pour répondre à toutes vos questions.</p>
         </div>
       </div>
+
+      <!-- Section Catalogue de Produits -->
+      <div class="catalogue-container">
+        <h1>Catalogue de Produits</h1>
+        <p>Explorez notre sélection de produits disponibles.</p>
+
+        <div v-if="loadingProduits">Chargement des produits...</div>
+
+        <div v-else>
+          <!-- Filtrage par catégorie -->
+          <div class="filters">
+            <div class="category-filter">
+              <label for="categorySelect">Filtrer par catégorie :</label>
+              <select id="categorySelect" v-model="categorieFiltre">
+                <option value="">Toutes les catégories</option>
+                <option v-for="categorie in categories" :key="categorie.id" :value="categorie.id">
+                  {{ categorie.nom }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Affichage des produits -->
+          <div class="produits-grid">
+            <div v-for="produit in produitsFiltres" :key="produit.id" class="produit-item">
+              <div class="produit-info">
+                <span class="produit-name">{{ produit.nom }}</span>
+                <span class="produit-category">Catégorie : {{ getCategorieName(produit.categorie_id) }}</span>
+                <span class="produit-price">{{ produit.prix.toFixed(2) }} €</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -47,29 +86,53 @@ export default {
   data() {
     return {
       hasOrder: false,  // Etat de la commande en cours
+      isLoading: false, // Etat de chargement pour les requêtes
+      errorMessage: '', // Message d'erreur en cas de problème
+      produits: [],
+      categories: [],
+      categorieFiltre: "",
+      loadingProduits: true,
+      loadingCategories: true,
     };
   },
+  computed: {
+    produitsFiltres() {
+      return this.produits.filter(produit => !this.categorieFiltre || produit.categorie_id === this.categorieFiltre);
+    },
+  },
   mounted() {
-    // Vérifier si l'utilisateur a une commande en cours lors du chargement de la page
     this.checkOrderStatus();
+    this.fetchProduits();
+    this.fetchCategories();
   },
   methods: {
     async checkOrderStatus() {
+      this.isLoading = true;
+      this.errorMessage = ''; // Reset error message
       try {
         const response = await fetch('/api/orders/check');
         const data = await response.json();
-        this.hasOrder = data.hasOrder;  // Met à jour l'état en fonction de la réponse
+        if (response.ok) {
+          this.hasOrder = data.hasOrder;  // Met à jour l'état en fonction de la réponse
+        } else {
+          this.errorMessage = "Impossible de vérifier l'état de la commande. Veuillez réessayer plus tard.";
+        }
       } catch (error) {
         console.error("Erreur lors de la vérification de la commande :", error);
+        this.errorMessage = "Une erreur s'est produite. Veuillez réessayer plus tard.";
+      } finally {
+        this.isLoading = false;
       }
     },
     async handleOrderAction() {
+      this.isLoading = true;
+      this.errorMessage = ''; // Reset error message
       if (this.hasOrder) {
         // Si une commande est en cours, on redirige pour continuer
         window.location.href = "/commande";
       } else {
         // Sinon, on crée une nouvelle commande
-        this.createOrder();
+        await this.createOrder();
       }
     },
     async createOrder() {
@@ -89,12 +152,48 @@ export default {
           alert("Commande créée avec succès !");
           window.location.href = "/commande";
         } else {
-          alert("Une erreur s'est produite lors de la création de la commande.");
+          this.errorMessage = "Une erreur s'est produite lors de la création de la commande.";
         }
       } catch (error) {
         console.error("Erreur lors de la création de la commande :", error);
-        alert("Une erreur s'est produite. Veuillez réessayer plus tard.");
+        this.errorMessage = "Une erreur s'est produite. Veuillez réessayer plus tard.";
+      } finally {
+        this.isLoading = false;
       }
+    },
+    async fetchProduits() {
+      this.loadingProduits = true;
+      try {
+        const response = await fetch("/api/produits");
+        if (response.ok) {
+          this.produits = await response.json();
+        } else {
+          console.error("Erreur lors de la récupération des produits");
+        }
+      } catch (error) {
+        console.error("Erreur réseau :", error);
+      } finally {
+        this.loadingProduits = false;
+      }
+    },
+    async fetchCategories() {
+      this.loadingCategories = true;
+      try {
+        const response = await fetch("/api/categories");
+        if (response.ok) {
+          this.categories = await response.json();
+        } else {
+          console.error("Erreur lors de la récupération des catégories");
+        }
+      } catch (error) {
+        console.error("Erreur réseau :", error);
+      } finally {
+        this.loadingCategories = false;
+      }
+    },
+    getCategorieName(categorieId) {
+      const categorie = this.categories.find(cat => cat.id === categorieId);
+      return categorie ? categorie.nom : "Catégorie non trouvée";
     },
   },
 };
@@ -149,8 +248,19 @@ export default {
   transition: background-color 0.3s ease;
 }
 
-.cta-button:hover {
+.cta-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.cta-button:hover:not(:disabled) {
   background-color: #c0392b;
+}
+
+.error-message {
+  color: red;
+  margin-top: 1rem;
+  font-size: 1.2rem;
 }
 
 .features-section {
@@ -188,8 +298,78 @@ export default {
   color: #7f8c8d;
 }
 
-.cta-button:disabled {
-  background-color: #ccc;  /* Couleur grise pour le bouton désactivé */
-  cursor: not-allowed;  /* Curseur "non autorisé" */
+/* Style du catalogue */
+.catalogue-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 20px;
+  background-color: #f3f4f6;
+  border-radius: 12px;
+}
+
+.catalogue-container h1 {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.filters {
+  margin-bottom: 20px;
+}
+
+.category-filter label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #555;
+}
+
+.category-filter select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s;
+}
+
+.produits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.produit-item {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.produit-item:hover {
+  background-color: #f0f8ff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.produit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.produit-name {
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: bold;
+}
+
+.produit-category {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.produit-price {
+  font-size: 1rem;
+  color: #007bff;
+  font-weight: bold;
 }
 </style>
