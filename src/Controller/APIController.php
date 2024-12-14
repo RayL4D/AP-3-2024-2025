@@ -555,6 +555,40 @@ public function getProduitDetails(int $id, ProduitRepository $produitRepository)
     return new JsonResponse($data);
 }
 
+#[Route('/api/stock/{id}/increment', name: 'app_api_increment_stock', methods: ['POST'])]
+public function incrementStock(
+    int $id,
+    Request $request,
+    EntityManagerInterface $entityManager,
+    StockRepository $stockRepository
+): JsonResponse {
+    // Récupérer l'entité Stock par son ID
+    $stock = $stockRepository->find($id);
+
+    if (!$stock) {
+        return new JsonResponse(['status' => 'Stock non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+    }
+
+    // Décoder les données de la requête pour obtenir la quantité à incrémenter
+    $data = json_decode($request->getContent(), true);
+
+    if (!isset($data['quantite']) || $data['quantite'] <= 0) {
+        return new JsonResponse(['status' => 'Quantité invalide'], JsonResponse::HTTP_BAD_REQUEST);
+    }
+
+    $quantiteAIncrementer = (int) $data['quantite'];
+
+    // Incrémenter le stock
+    $stock->setQuantiteStock($stock->getQuantiteStock() + $quantiteAIncrementer);
+
+    // Sauvegarder les modifications
+    $entityManager->flush();
+
+    return new JsonResponse([
+        'status' => 'Stock incrémenté avec succès',
+        'nouveauStock' => $stock->getQuantiteStock(),
+    ], JsonResponse::HTTP_OK);
+}
 
 #[Route('/api/stock/{id}/decrement', name: 'app_api_decrement_stock', methods: ['POST'])]
 public function decrementStock(

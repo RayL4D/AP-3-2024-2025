@@ -79,6 +79,7 @@
                 >
                   Retirer
                 </button>
+
               </li>
             </ul>
             <div class="commande-total">
@@ -234,6 +235,25 @@ export default {
 
 },
 
+async incrementStock(produit) {
+  try {
+    // Appel de l'API pour incrémenter le stock
+    const response = await fetch(`/api/stock/${produit.produit_id}/increment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantite: 1 }), // Incrémente de 1
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      alert(`Erreur: ${errorData.status}`);
+    }
+  } catch (error) {
+    console.error('Erreur réseau lors de l\'incrémentation du stock:', error);
+    alert('Erreur réseau');
+  }
+},
+
 async decrementStock(produit) {
   try {
     // Si le stock est géré par une entité distincte, utilisez l'id de l'entité stock
@@ -252,44 +272,48 @@ async decrementStock(produit) {
     alert('Erreur réseau');
   }
 },
-    async decrementProduit(produit) {
-    try {
-      // Si le produit existe déjà dans la commande
-      const produitCommande = this.commande.items.find(item => item.id === produit.produit_id);
-      if (produitCommande) {
-        if (produitCommande.quantity > 1) {
-          produitCommande.quantity -= 1; // Diminue la quantité
-        } else {
-          // Si la quantité est 1, on supprime l'item de la commande
-          this.commande.items = this.commande.items.filter(item => item.id !== produit.produit_id);
-        }
+async decrementProduit(produit) {
+  try {
+    // Si le produit existe déjà dans la commande
+    const produitCommande = this.commande.items.find(item => item.id === produit.produit_id);
+    if (produitCommande) {
+      if (produitCommande.quantity > 1) {
+        produitCommande.quantity -= 1; // Diminue la quantité
       } else {
-        // Si le produit est dans les produits anciens mais pas encore dans la commande
-        const produitAncien = this.produitsAnciens.find(item => item.produit_id === produit.produit_id);
-        if (produitAncien) {
-          if (produitAncien.quantite > 1) {
-            produitAncien.quantite -= 1; // Diminue la quantité
-          } else {
-            // Retirer le produit des produits anciens s'il a une quantité de 1
-            this.produitsAnciens = this.produitsAnciens.filter(item => item.produit_id !== produit.produit_id);
-          }
+        // Si la quantité est 1, on supprime l'item de la commande
+        this.commande.items = this.commande.items.filter(item => item.id !== produit.produit_id);
+      }
+    } else {
+      // Si le produit est dans les produits anciens mais pas encore dans la commande
+      const produitAncien = this.produitsAnciens.find(item => item.produit_id === produit.produit_id);
+      if (produitAncien) {
+        if (produitAncien.quantite > 1) {
+          produitAncien.quantite -= 1; // Diminue la quantité
+        } else {
+          // Retirer le produit des produits anciens s'il a une quantité de 1
+          this.produitsAnciens = this.produitsAnciens.filter(item => item.produit_id !== produit.produit_id);
         }
       }
-
-      // Envoyer la mise à jour au serveur pour la commande
-      const response = await fetch(`/api/orders/${this.commandeId}/remove-detail`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ produit_id: produit.produit_id })
-      });
-
-      if (!response.ok) {
-        console.error("Erreur lors de la décrémentation.");
-      }
-    } catch (error) {
-      console.error("Erreur réseau :", error);
     }
-  },
+
+    // Incrémenter le stock sur le serveur
+    await this.incrementStock(produit);
+
+    // Envoyer la mise à jour au serveur pour la commande
+    const response = await fetch(`/api/orders/${this.commandeId}/remove-detail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ produit_id: produit.produit_id })
+    });
+
+    if (!response.ok) {
+      console.error("Erreur lors de la décrémentation.");
+    }
+  } catch (error) {
+    console.error("Erreur réseau :", error);
+  }
+},
+
 
     async addProduitToCommande(produit) {
       try {
