@@ -15,27 +15,37 @@
         <div class="orders-list">
           <div v-for="order in paginatedOrders" :key="order.id" class="order-card">
             <div class="order-header">
-              <h3 class="order-title">Commande #{{ order.id }} - {{ order.statut }} ({{ order.date }})</h3>
+              <h3 class="order-title">
+                <span class="order-id">Commande #{{ order.id }}</span>
+                <span :class="['order-status', order.statut.toLowerCase().replace(/ /g, '-')]">{{ order.statut }}</span>
+                <span class="order-date">{{ order.date }}</span>
+              </h3>
             </div>
-            <ul class="order-details">
-              <li v-for="detail in order.details" :key="detail.produit_id" class="order-detail">
-                <span class="product-name">{{ detail.produit_nom }}</span>
-                <span class="product-quantity">Quantité commandée : {{ detail.quantite }}</span>
-                <span class="product-price">Prix : {{ detail.prix }} €</span>
-              </li>
-            </ul>
+
+            <div class="order-details">
+              <ul>
+                <li v-for="detail in order.details" :key="detail.produit_id" class="order-detail">
+                  <span class="product-name">{{ detail.produit_nom }}</span>
+                  <div class="product-info">
+                    <span class="product-quantity">Quantité: {{ detail.quantite }}</span>
+                    <span class="product-price">Prix: {{ detail.prix }} €</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
             <!-- Prix total de la commande -->
             <div class="order-total">
-              <strong>Prix total : {{ getOrderTotal(order) }} €</strong>
+              <strong>Prix total: {{ getOrderTotal(order) }} €</strong>
             </div>
           </div>
         </div>
 
         <!-- Pagination -->
         <div class="pagination">
-          <button @click="previousPage" :disabled="currentPage === 1">Précédent</button>
-          <span>Page {{ currentPage }} sur {{ totalPages }}</span>
-          <button @click="nextPage" :disabled="currentPage === totalPages">Suivant</button>
+          <button @click="previousPage" :disabled="currentPage === 1" class="pagination-btn">Précédent</button>
+          <span class="pagination-info">Page {{ currentPage }} sur {{ totalPages }}</span>
+          <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-btn">Suivant</button>
         </div>
       </div>
     </div>
@@ -123,91 +133,101 @@ export default {
 .client-app {
   font-family: 'Arial', sans-serif;
   color: #333;
-  background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+  background: #f4f6f9;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1rem;
+  padding: 2rem;
 }
 
 .commandes-container {
   max-width: 1200px;
-  margin-top: 2rem;
-  padding: 20px;
+  margin-top: 3rem;
+  padding: 25px;
   background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .title {
   text-align: center;
-  font-size: 2rem;
+  font-size: 2.5rem;
   color: #333;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  font-weight: 700;
 }
 
 .loading,
 .no-orders {
   text-align: center;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   color: #888;
 }
 
 .orders-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 25px;
 }
 
 .order-card {
   background-color: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s, box-shadow 0.3s;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .order-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .order-header {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .order-title {
-  font-size: 1.4rem;
-  color: #333;
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ff8c00;
 }
 
-.order-total {
-  text-align: right;
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #007bff;
-  margin-top: 20px;
+.order-id {
+  color: #000000;
 }
 
-.order-details {
-  list-style: none;
+.order-status {
+  font-style: italic;
+  font-weight: 600;
+}
+
+.order-status.en-cours-de-creation {
+  color: #f39c12; /* Jaune orangé */
+}
+
+.order-status.validée {
+  color: #27ae60; /* Vert foncé */
+}
+
+.order-date {
+  color: #888;
+}
+
+.order-details ul {
   padding: 0;
+  margin: 0;
+  list-style: none;
 }
 
 .order-detail {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 1rem;
-  color: #555;
-}
-
-.order-detail span {
-  display: block;
-  margin-bottom: 5px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .product-name {
@@ -215,38 +235,53 @@ export default {
   color: #007bff;
 }
 
-.product-quantity,
-.product-price {
-  color: #333;
+.product-info {
+  display: flex;
+  justify-content: space-between;
+  width: 50%;
+  font-size: 1rem;
 }
 
-.product-price {
+.product-quantity, .product-price {
+  color: #555;
+}
+
+.order-total {
+  text-align: right;
+  font-size: 1.3rem;
   font-weight: bold;
+  color: #27ae60;
+  margin-top: 25px;
 }
 
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
-.pagination button {
-  padding: 10px 20px;
-  font-size: 1rem;
+.pagination-btn {
+  padding: 12px 25px;
+  font-size: 1.1rem;
   color: #fff;
   background-color: #007bff;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
-  margin: 0 10px;
+  margin: 0 15px;
+  transition: background-color 0.3s ease;
 }
 
-.pagination button:disabled {
+.pagination-btn:hover {
+  background-color: #0056b3;
+}
+
+.pagination-btn:disabled {
   background-color: #ccc;
 }
 
-.pagination span {
+.pagination-info {
   font-size: 1.2rem;
   color: #333;
 }
