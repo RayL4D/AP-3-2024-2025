@@ -49,7 +49,7 @@
                 </div>
                 <button
                   class="add-button"
-                  @click="ajouterProduit(produit) + decrementStock(produit)"
+                  @click="ajouterProduit(produit)"
                   :disabled="loadingCommande"
                 >
                   Ajouter
@@ -219,21 +219,43 @@ export default {
     }
   },
 
-  ajouterProduit(produit) {
-    
-  // Ajout immédiat dans produitsAnciens pour l'affichage dans "Produits déjà ajoutés"
-  const existingProduitAncien = this.produitsAnciens.find(item => item.produit_id === produit.id);
-  if (existingProduitAncien) {
-    existingProduitAncien.quantite += 1; // Incrémenter la quantité si déjà présent
-  } else {
-    this.produitsAnciens.push({ produit_id: produit.id, produit_nom: produit.nom, quantite: 1, prix: produit.prix });
-  }
+  async ajouterProduit(produit) {
+    try {
+      // Vérification et décrémentation du stock
+      const response = await fetch(`/api/stock/${produit.id}/decrement`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantite: 1 }), // Décrémente de 1
+      });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Erreur: ${errorData.message || "Stock insuffisant"}`);
+        return; // Sortir si le stock est insuffisant
+      }
 
-  // Appeler la méthode pour envoyer la mise à jour au serveur
-  this.addProduitToCommande(produit);
+      // Mise à jour locale de produitsAnciens
+      const existingProduitAncien = this.produitsAnciens.find(
+        (item) => item.produit_id === produit.id
+      );
+      if (existingProduitAncien) {
+        existingProduitAncien.quantite += 1; // Incrémenter la quantité si déjà présent
+      } else {
+        this.produitsAnciens.push({
+          produit_id: produit.id,
+          produit_nom: produit.nom,
+          quantite: 1,
+          prix: produit.prix,
+        });
+      }
 
-},
+      // Mise à jour de la commande côté serveur
+      await this.addProduitToCommande(produit);
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du produit :", error);
+      alert("Erreur réseau ou problème serveur.");
+    }
+  },
 
 async incrementStock(produit) {
   try {
