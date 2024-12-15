@@ -215,6 +215,11 @@ export default {
   white-space: nowrap; /* Empêche la coupure en cas de texte long */
 }
 
+.order-status.terminée {
+  background-color: #e74c3c;
+  color: #fff;
+}
+
 .order-status {
   background-color: #f39c12;
   color: #fff;
