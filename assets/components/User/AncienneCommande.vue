@@ -144,7 +144,7 @@ export default {
 .commandes-container {
   max-width: 1200px;
   margin-top: 3rem;
-  padding: 25px;
+  padding: 30px;
   background-color: #fff;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -152,16 +152,16 @@ export default {
 
 .title {
   text-align: center;
-  font-size: 2.5rem;
-  color: #333;
-  margin-bottom: 30px;
-  font-weight: 700;
+  font-size: 2.8rem;
+  color: #2c3e50;
+  margin-bottom: 40px;
+  font-weight: bold;
 }
 
 .loading,
 .no-orders {
   text-align: center;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   color: #888;
 }
 
@@ -172,7 +172,7 @@ export default {
 }
 
 .order-card {
-  background-color: #fff;
+  background-color: #fafafa;
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
@@ -181,40 +181,54 @@ export default {
 
 .order-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
 }
 
 .order-header {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px; /* Ajout d'un espacement uniforme */
 }
 
 .order-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #34495e;
   display: flex;
   justify-content: space-between;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #ff8c00;
+  align-items: center;
+  gap: 15px; /* Uniformité des espacements */
 }
 
 .order-id {
-  color: #000000;
+  color: #34495e;
 }
 
 .order-status {
   font-style: italic;
-  font-weight: 600;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 8px;
+  text-transform: capitalize;
+  white-space: nowrap; /* Pour éviter des retours à la ligne */
 }
 
 .order-status.en-cours-de-creation {
-  color: #f39c12; /* Jaune orangé */
+  background-color: #f39c12;
+  color: #fff;
 }
 
 .order-status.validée {
-  color: #27ae60; /* Vert foncé */
+  background-color: #27ae60;
+  color: #fff;
 }
 
 .order-date {
-  color: #888;
+  font-size: 1rem;
+  color: #7f8c8d;
+  white-space: nowrap; /* Pour éviter des retours à la ligne */
 }
 
 .order-details ul {
@@ -227,12 +241,12 @@ export default {
   display: flex;
   justify-content: space-between;
   padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #ecf0f1;
 }
 
 .product-name {
   font-weight: bold;
-  color: #007bff;
+  color: #3498db;
 }
 
 .product-info {
@@ -242,8 +256,9 @@ export default {
   font-size: 1rem;
 }
 
-.product-quantity, .product-price {
-  color: #555;
+.product-quantity,
+.product-price {
+  color: #7f8c8d;
 }
 
 .order-total {
@@ -251,7 +266,7 @@ export default {
   font-size: 1.3rem;
   font-weight: bold;
   color: #27ae60;
-  margin-top: 25px;
+  margin-top: 20px;
 }
 
 .pagination {
@@ -265,20 +280,20 @@ export default {
   padding: 12px 25px;
   font-size: 1.1rem;
   color: #fff;
-  background-color: #007bff;
+  background-color: #3498db;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   margin: 0 15px;
   transition: background-color 0.3s ease;
 }
 
 .pagination-btn:hover {
-  background-color: #0056b3;
+  background-color: #2980b9;
 }
 
 .pagination-btn:disabled {
-  background-color: #ccc;
+  background-color: #bdc3c7;
 }
 
 .pagination-info {
