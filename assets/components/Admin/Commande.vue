@@ -37,7 +37,12 @@
                 <strong>Prix total: {{ getOrderTotal(order) }} €</strong>
               </div>
 
-              <button class="take-order-btn" @click="takeOrder(order.id)">
+              <!-- Bouton Prendre en charge -->
+              <button
+                v-if="order.statut.toLowerCase() === 'validée'"
+                class="take-order-btn"
+                @click="takeOrder(order.id)"
+              >
                 Prendre en charge la commande
               </button>
             </div>
@@ -244,6 +249,7 @@ export default {
   },
 };
 </script>
+
 <style scoped>
 
 
