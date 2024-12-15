@@ -48,11 +48,11 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/chemincourt', name: 'app_admin_chemin_court')]
-    public function getCheminCourt(): Response
+    #[Route('/admin/map', name: 'app_admin_map')]
+    public function getMap(): Response
     {
 
-        return $this->render('admin/chemincourt.html.twig', [
+        return $this->render('admin/map.html.twig', [
             'controller_name' => 'AdminController',
         ]);
     }

@@ -1,7 +1,9 @@
 <template>
   <div>
-    <Navbar />
-    <div class="chemin-court-app">
+    <!-- NavbarAdmin ajoutée ici -->
+    <NavbarAdmin />
+    
+    <div class="map-app">
       <div class="category-grid">
         <!-- On boucle sur chaque catégorie -->
         <div 
@@ -30,6 +32,9 @@
 </template>
 
 <script>
+// Importation de la NavbarAdmin
+import NavbarAdmin from './NavbarAdmin.vue';
+
 export default {
   data() {
     return {
@@ -59,6 +64,9 @@ export default {
         console.error('Erreur lors de la récupération des données :', error);
       }
     },
+  },
+  components: {
+    NavbarAdmin, // Déclaration du composant NavbarAdmin
   },
 };
 </script>
