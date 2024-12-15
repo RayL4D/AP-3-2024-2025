@@ -1,61 +1,67 @@
 <template>
-  <div class="admin-app">
+  <div class="a-commande-app">
     <Navbar />
-    <div class="commandes-container">
-      <h2 class="title">Commandes Administrateur</h2>
+    <div class="content-container">
+      <!-- Colonne gauche : Commandes -->
+      <div class="commandes-container">
+        <h2 class="title">Commandes Administrateur</h2>
 
-      <div v-if="loading" class="loading">Chargement des commandes...</div>
-      <div v-else-if="orders.length === 0" class="no-orders">Vous n'avez aucune commande.</div>
-      <div v-else>
-        <div class="orders-list">
-          <div v-for="order in paginatedOrders" :key="order.id" class="order-card">
-            <div class="order-header">
-              <h3 class="order-title">
-                <span class="order-id">Commande #{{ order.id }}</span>
-                <span :class="['order-status', order.statut.toLowerCase().replace(/ /g, '-')]">{{ order.statut }}</span>
-                <span class="order-date">{{ order.date }}</span>
-              </h3>
+        <div v-if="loading" class="loading">Chargement des commandes...</div>
+        <div v-else-if="orders.length === 0" class="no-orders">Vous n'avez aucune commande.</div>
+        <div v-else>
+          <div class="orders-list">
+            <div v-for="order in paginatedOrders" :key="order.id" class="order-card">
+              <div class="order-header">
+                <h3 class="order-title">
+                  <span class="order-id">Commande #{{ order.id }}</span>
+                  <span :class="['order-status', order.statut.toLowerCase().replace(/ /g, '-')]">{{ order.statut }}</span>
+                  <span class="order-date">{{ order.date }}</span>
+                </h3>
+              </div>
+
+              <div class="order-details">
+                <ul>
+                  <li v-for="detail in order.details" :key="detail.produit_id" class="order-detail">
+                    <span class="product-name">{{ detail.produit_nom }}</span>
+                    <div class="product-info">
+                      <span class="product-quantity">Quantité: {{ detail.quantite }}</span>
+                      <span class="product-price">Prix: {{ detail.prix }} €</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="order-total">
+                <strong>Prix total: {{ getOrderTotal(order) }} €</strong>
+              </div>
+
+              <button class="take-order-btn" @click="takeOrder(order.id)">Prendre en charge la commande</button>
             </div>
+          </div>
 
-            <div class="order-details">
-              <ul>
-                <li v-for="detail in order.details" :key="detail.produit_id" class="order-detail">
-                  <span class="product-name">{{ detail.produit_nom }}</span>
-                  <div class="product-info">
-                    <span class="product-quantity">Quantité: {{ detail.quantite }}</span>
-                    <span class="product-price">Prix: {{ detail.prix }} €</span>
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            <div class="order-total">
-              <strong>Prix total: {{ getOrderTotal(order) }} €</strong>
-            </div>
-
-            <button class="take-order-btn" @click="takeOrder(order.id)">Prendre en charge la commande</button>
+          <div class="pagination">
+            <button @click="previousPage" :disabled="currentPage === 1" class="pagination-btn">Précédent</button>
+            <span class="pagination-info">Page {{ currentPage }} sur {{ totalPages }}</span>
+            <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-btn">Suivant</button>
           </div>
         </div>
+      </div>
 
-        <!-- Afficher le chemin optimal pour cette commande -->
-        <div v-if="optimalPath.length" class="optimal-path">
-          <h3>Chemin optimal pour la commande :</h3>
+      <!-- Colonne droite : Chemin optimal -->
+      <div class="optimal-path-container" v-if="optimalPath.length">
+        <h3>Chemin Optimal</h3>
+        <div class="optimal-path-list">
           <ul>
             <li v-for="(product, index) in optimalPath" :key="index">
-              {{ product.nom }} - Emplacement: ({{ product.x }}, {{ product.y }})
+              <strong>{{ product.nom }}</strong> - Emplacement: ({{ product.x }}, {{ product.y }})
             </li>
           </ul>
-        </div>
-
-        <div class="pagination">
-          <button @click="previousPage" :disabled="currentPage === 1" class="pagination-btn">Précédent</button>
-          <span class="pagination-info">Page {{ currentPage }} sur {{ totalPages }}</span>
-          <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-btn">Suivant</button>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 
 <script>
 import Navbar from './NavbarAdmin.vue';
@@ -167,7 +173,7 @@ export default {
 </script>
 
 <style scoped>
-.admin-app {
+.a-commande-app {
   font-family: 'Arial', sans-serif;
   color: #333;
   background: #f4f6f9;
@@ -344,4 +350,38 @@ export default {
   font-size: 1.2rem;
   color: #333;
 }
+
+.content-container {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.content-container {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  align-items: flex-start; /* Aligne les deux colonnes au début */
+}
+
+.commandes-container {
+  flex: 2;
+}
+
+.optimal-path-container {
+  flex: 1;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  margin-top: 3rem; /* Ajuster pour correspondre au conteneur des commandes */
+}
+
+.optimal-path-container h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
 </style>
