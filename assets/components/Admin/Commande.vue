@@ -62,22 +62,21 @@
   </div>
 </template>
 
-
 <script>
 import Navbar from './NavbarAdmin.vue';
 
 export default {
-  name: "Commandes Admin  ",
+  name: "CommandesAdmin",
   components: { Navbar },
   data() {
     return {
       orders: [],
-      produits: [], // Ajout des produits pour les récupérer et les utiliser
+      produits: [],
       loading: true,
       currentPage: 1,
       ordersPerPage: 3,
       optimalPath: [],
-      errorMessage: '', // Message d'erreur
+      errorMessage: '',
     };
   },
   computed: {
@@ -92,7 +91,6 @@ export default {
   },
   async mounted() {
     try {
-      // Récupération des commandes
       const response = await fetch('/api/orders/user/admin', {
         method: 'GET',
         headers: {
@@ -108,7 +106,6 @@ export default {
         throw new Error('Erreur lors de la récupération des commandes.');
       }
 
-      // Récupérer les produits via une API
       const produitsResponse = await fetch('/api/produits', {
         method: 'GET',
         headers: {
@@ -122,7 +119,6 @@ export default {
       } else {
         throw new Error('Erreur lors de la récupération des produits.');
       }
-
     } catch (error) {
       this.errorMessage = error.message;
       console.error('Erreur de connexion', error);
@@ -141,13 +137,11 @@ export default {
         this.currentPage++;
       }
     },
-
     getOrderTotal(order) {
       return order.details.reduce((total, detail) => {
         return total + detail.prix * detail.quantite;
       }, 0).toFixed(2);
     },
-
     takeOrder(orderId) {
       const order = this.orders.find(order => order.id === orderId);
       const orderedProducts = order.details.map(detail => {
@@ -157,22 +151,56 @@ export default {
       const startProduct = orderedProducts[0];
       this.optimalPath = this.dijkstra(startProduct, orderedProducts);
     },
-
-    // Implémentation basique de l'algorithme de Dijkstra
     dijkstra(startProduct, orderedProducts) {
-      // Exemple simple : trier les produits en fonction de leur position
-      // Vous pouvez adapter cette fonction selon les positions réelles des produits dans votre base de données.
-      return orderedProducts.sort((a, b) => {
-        const distanceA = Math.sqrt(Math.pow(a.x - startProduct.x, 2) + Math.pow(a.y - startProduct.y, 2));
-        const distanceB = Math.sqrt(Math.pow(b.x - startProduct.x, 2) + Math.pow(b.y - startProduct.y, 2));
-        return distanceA - distanceB;
+      const graph = this.buildGraph(orderedProducts);
+      const path = [];
+      const unvisitedProducts = [...orderedProducts];
+      let currentId = startProduct.id;
+
+      path.push(startProduct);
+
+      while (unvisitedProducts.length > 0) {
+        const currentProduct = unvisitedProducts.find(p => p.id === currentId);
+        unvisitedProducts.splice(unvisitedProducts.indexOf(currentProduct), 1);
+
+        const nextProduct = unvisitedProducts.reduce((closest, product) => {
+          const distance = Math.sqrt(
+            Math.pow(product.x - currentProduct.x, 2) + Math.pow(product.y - currentProduct.y, 2)
+          );
+          return distance < closest.distance ? { product, distance } : closest;
+        }, { product: null, distance: Infinity });
+
+        if (nextProduct.product) {
+          path.push(nextProduct.product);
+          currentId = nextProduct.product.id;
+        } else {
+          break;
+        }
+      }
+
+      return path;
+    },
+    buildGraph(products) {
+      const graph = {};
+      products.forEach(product => {
+        graph[product.id] = products
+          .filter(p => p.id !== product.id)
+          .map(p => ({
+            id: p.id,
+            distance: Math.sqrt(
+              Math.pow(p.x - product.x, 2) + Math.pow(p.y - product.y, 2)
+            )
+          }));
       });
+      return graph;
     },
   },
 };
 </script>
 
 <style scoped>
+
+
 .a-commande-app {
   font-family: 'Arial', sans-serif;
   color: #333;
