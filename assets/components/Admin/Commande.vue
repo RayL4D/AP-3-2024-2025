@@ -14,7 +14,9 @@
               <div class="order-header">
                 <h3 class="order-title">
                   <span class="order-id">Commande #{{ order.id }}</span>
-                  <span :class="['order-status', order.statut.toLowerCase().replace(/ /g, '-')]">{{ order.statut }}</span>
+                  <span :class="['order-status', order.statut.toLowerCase().replace(/ /g, '-')]">
+                    {{ order.statut }}
+                  </span>
                   <span class="order-date">{{ order.date }}</span>
                 </h3>
               </div>
@@ -35,14 +37,20 @@
                 <strong>Prix total: {{ getOrderTotal(order) }} €</strong>
               </div>
 
-              <button class="take-order-btn" @click="takeOrder(order.id)">Prendre en charge la commande</button>
+              <button class="take-order-btn" @click="takeOrder(order.id)">
+                Prendre en charge la commande
+              </button>
             </div>
           </div>
 
           <div class="pagination">
-            <button @click="previousPage" :disabled="currentPage === 1" class="pagination-btn">Précédent</button>
+            <button @click="previousPage" :disabled="currentPage === 1" class="pagination-btn">
+              Précédent
+            </button>
             <span class="pagination-info">Page {{ currentPage }} sur {{ totalPages }}</span>
-            <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-btn">Suivant</button>
+            <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-btn">
+              Suivant
+            </button>
           </div>
         </div>
       </div>
@@ -57,6 +65,13 @@
             </li>
           </ul>
         </div>
+        <button
+          class="take-order-btn"
+          @click="completeOrder(currentOrderId)"
+          :disabled="!currentOrderId || isOrderCompleted"
+        >
+          Terminer la commande
+        </button>
       </div>
     </div>
   </div>
@@ -77,6 +92,8 @@ export default {
       ordersPerPage: 3,
       optimalPath: [],
       errorMessage: '',
+      currentOrderId: null, // ID de la commande active
+      isOrderCompleted: false, // État de la commande active
     };
   },
   computed: {
@@ -150,6 +167,36 @@ export default {
 
       const startProduct = orderedProducts[0];
       this.optimalPath = this.dijkstra(startProduct, orderedProducts);
+      this.currentOrderId = orderId; // Définit la commande active
+      this.isOrderCompleted = order.statut === 'Terminée'; // Vérifie l'état de la commande
+    },
+    async completeOrder(orderId) {
+      try {
+        const response = await fetch(`/api/orders/complete/${orderId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la mise à jour de la commande.');
+        }
+
+        // Mise à jour locale des données
+        const updatedOrder = this.orders.find(order => order.id === orderId);
+        if (updatedOrder) {
+          updatedOrder.statut = 'Terminée';
+          this.isOrderCompleted = true; // Marque la commande comme terminée
+        }
+
+        alert('Commande terminée avec succès.');
+      } catch (error) {
+        console.error(error);
+        alert('Impossible de terminer la commande. Veuillez réessayer.');
+      }
     },
     dijkstra(startProduct, orderedProducts) {
       const graph = this.buildGraph(orderedProducts);
@@ -197,7 +244,6 @@ export default {
   },
 };
 </script>
-
 <style scoped>
 
 
@@ -302,7 +348,12 @@ export default {
   padding: 5px 10px;
   border-radius: 8px;
   text-transform: capitalize;
-  white-space: nowrap; /* Empêche la coupure en cas de texte long */
+  white-space: nowrap;
+}
+
+.order-status.terminée {
+  background-color: #e74c3c;
+  color: #fff;
 }
 
 .order-status {
