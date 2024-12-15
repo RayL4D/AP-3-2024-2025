@@ -29,14 +29,6 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/graphique', name: 'app_admin_graphique')]
-    public function getLesGraphiquesAdmin(): Response
-    {
-
-        return $this->render('admin/graphique.html.twig', [
-            'controller_name' => 'AdminController',
-        ]);
-    }
 
     #[Route('/admin/commande', name: 'app_admin_commande')]
     public function getLesCommandesAdmin(): Response
@@ -56,11 +48,11 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/orderdetail', name: 'app_admin_order_detail')]
-    public function getorderdetail(): Response
+    #[Route('/admin/chemincourt', name: 'app_admin_chemin_court')]
+    public function getCheminCourt(): Response
     {
 
-        return $this->render('admin/orderDetail.html.twig', [
+        return $this->render('admin/chemincourt.html.twig', [
             'controller_name' => 'AdminController',
         ]);
     }

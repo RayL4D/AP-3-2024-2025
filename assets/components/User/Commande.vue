@@ -95,7 +95,7 @@
             </button>
           </div>
           <div v-else>
-            <p>Aucun produit ajouté dans les détails précédents.</p>
+            <p>Votre commande est vide. Ajoutez des articles pour commencer !</p>
           </div>
         </div>
       </div>

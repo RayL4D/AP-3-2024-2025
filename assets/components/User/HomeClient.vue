@@ -38,7 +38,7 @@
 
       <!-- Section Catalogue de Produits -->
       <div class="catalogue-container">
-        <h1>Catalogue de Produits</h1>
+        <h1>Catalogue des Produits</h1>
         <p>Explorez notre sélection de produits disponibles.</p>
 
         <div v-if="loadingProduits">Chargement des produits...</div>

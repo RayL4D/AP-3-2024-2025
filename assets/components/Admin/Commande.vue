@@ -1,13 +1,11 @@
 <template>
   <div class="admin-app">
     <Navbar />
-
     <div class="commandes-container">
       <h2 class="title">Commandes Administrateur</h2>
 
       <div v-if="loading" class="loading">Chargement des commandes...</div>
-      <div v-else-if="orders.length === 0" class="no-orders">Aucune commande disponible.</div>
-
+      <div v-else-if="orders.length === 0" class="no-orders">Vous n'avez aucune commande.</div>
       <div v-else>
         <div class="orders-list">
           <div v-for="order in paginatedOrders" :key="order.id" class="order-card">
@@ -17,29 +15,36 @@
                 <span :class="['order-status', order.statut.toLowerCase().replace(/ /g, '-')]">{{ order.statut }}</span>
                 <span class="order-date">{{ order.date }}</span>
               </h3>
-              <p class="order-user" v-if="order.created_by">
-                Créée par : {{ order.created_by.nom || 'Utilisateur inconnu' }} ({{ order.created_by.email || 'Email inconnu' }})
-              </p>
-              <p v-else class="order-user">Créateur inconnu</p>
             </div>
 
-            <div class="order-details" v-if="order.details && order.details.length > 0">
+            <div class="order-details">
               <ul>
                 <li v-for="detail in order.details" :key="detail.produit_id" class="order-detail">
                   <span class="product-name">{{ detail.produit_nom }}</span>
                   <div class="product-info">
-                    <span class="product-quantity">Quantité : {{ detail.quantite }}</span>
-                    <span class="product-price">Prix : {{ detail.prix }} €</span>
-                    <span class="stock-quantity">
-                      Stock : {{ detail.stock_quantite !== null ? detail.stock_quantite : 'Indisponible' }}
-                    </span>
+                    <span class="product-quantity">Quantité: {{ detail.quantite }}</span>
+                    <span class="product-price">Prix: {{ detail.prix }} €</span>
                   </div>
                 </li>
               </ul>
             </div>
 
-            <p v-else class="no-details">Aucun produit dans cette commande.</p>
+            <div class="order-total">
+              <strong>Prix total: {{ getOrderTotal(order) }} €</strong>
+            </div>
+
+            <button class="take-order-btn" @click="takeOrder(order.id)">Prendre en charge la commande</button>
           </div>
+        </div>
+
+        <!-- Afficher le chemin optimal pour cette commande -->
+        <div v-if="optimalPath.length" class="optimal-path">
+          <h3>Chemin optimal pour la commande :</h3>
+          <ul>
+            <li v-for="(product, index) in optimalPath" :key="index">
+              {{ product.nom }} - Emplacement: ({{ product.x }}, {{ product.y }})
+            </li>
+          </ul>
         </div>
 
         <div class="pagination">
@@ -61,9 +66,12 @@ export default {
   data() {
     return {
       orders: [],
+      produits: [], // Ajout des produits pour les récupérer et les utiliser
       loading: true,
       currentPage: 1,
       ordersPerPage: 3,
+      optimalPath: [],
+      errorMessage: '', // Message d'erreur
     };
   },
   computed: {
@@ -78,6 +86,7 @@ export default {
   },
   async mounted() {
     try {
+      // Récupération des commandes
       const response = await fetch('/api/orders/user/admin', {
         method: 'GET',
         headers: {
@@ -85,12 +94,31 @@ export default {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
         },
       });
+
       if (response.ok) {
-        this.orders = await response.json();
+        const data = await response.json();
+        this.orders = data.sort((a, b) => new Date(b.date) - new Date(a.date));
       } else {
-        console.error('Erreur lors de la récupération des commandes.');
+        throw new Error('Erreur lors de la récupération des commandes.');
       }
+
+      // Récupérer les produits via une API
+      const produitsResponse = await fetch('/api/produits', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (produitsResponse.ok) {
+        const produitsData = await produitsResponse.json();
+        this.produits = produitsData;
+      } else {
+        throw new Error('Erreur lors de la récupération des produits.');
+      }
+
     } catch (error) {
+      this.errorMessage = error.message;
       console.error('Erreur de connexion', error);
     } finally {
       this.loading = false;
@@ -106,6 +134,33 @@ export default {
       if (this.currentPage < this.totalPages) {
         this.currentPage++;
       }
+    },
+
+    getOrderTotal(order) {
+      return order.details.reduce((total, detail) => {
+        return total + detail.prix * detail.quantite;
+      }, 0).toFixed(2);
+    },
+
+    takeOrder(orderId) {
+      const order = this.orders.find(order => order.id === orderId);
+      const orderedProducts = order.details.map(detail => {
+        return this.produits.find(produit => produit.id === detail.produit_id);
+      });
+
+      const startProduct = orderedProducts[0];
+      this.optimalPath = this.dijkstra(startProduct, orderedProducts);
+    },
+
+    // Implémentation basique de l'algorithme de Dijkstra
+    dijkstra(startProduct, orderedProducts) {
+      // Exemple simple : trier les produits en fonction de leur position
+      // Vous pouvez adapter cette fonction selon les positions réelles des produits dans votre base de données.
+      return orderedProducts.sort((a, b) => {
+        const distanceA = Math.sqrt(Math.pow(a.x - startProduct.x, 2) + Math.pow(a.y - startProduct.y, 2));
+        const distanceB = Math.sqrt(Math.pow(b.x - startProduct.x, 2) + Math.pow(b.y - startProduct.y, 2));
+        return distanceA - distanceB;
+      });
     },
   },
 };
@@ -141,10 +196,15 @@ export default {
 }
 
 .loading,
-.no-orders {
+.no-orders,
+.error {
   text-align: center;
   font-size: 1.3rem;
   color: #888;
+}
+
+.error {
+  color: red;
 }
 
 .orders-list {
@@ -229,10 +289,28 @@ export default {
   color: #555;
 }
 
-.no-details {
-  text-align: center;
-  color: #888;
+.order-total {
+  text-align: right;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #27ae60;
+  margin-top: 25px;
+}
+
+.take-order-btn {
+  margin-top: 15px;
+  padding: 10px 20px;
   font-size: 1rem;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.take-order-btn:hover {
+  background-color: #0056b3;
 }
 
 .pagination {
