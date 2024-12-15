@@ -212,10 +212,10 @@ export default {
   padding: 5px 10px;
   border-radius: 8px;
   text-transform: capitalize;
-  white-space: nowrap; /* Pour éviter des retours à la ligne */
+  white-space: nowrap; /* Empêche la coupure en cas de texte long */
 }
 
-.order-status.en-cours-de-creation {
+.order-status {
   background-color: #f39c12;
   color: #fff;
 }

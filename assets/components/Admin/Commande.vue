@@ -261,6 +261,7 @@ export default {
   font-size: 1.4rem;
   font-weight: bold;
   color: #34495e;
+  gap: 15px; /* Ajout d'espace entre les éléments */
 }
 
 .order-id {
@@ -273,9 +274,10 @@ export default {
   padding: 5px 10px;
   border-radius: 8px;
   text-transform: capitalize;
+  white-space: nowrap; /* Empêche la coupure en cas de texte long */
 }
 
-.order-status.en-cours-de-creation {
+.order-status {
   background-color: #f39c12;
   color: #fff;
 }
@@ -288,6 +290,7 @@ export default {
 .order-date {
   font-size: 1rem;
   color: #7f8c8d;
+  margin-left: 10px; /* Espace spécifique entre statut et date */
 }
 
 .order-details ul {
