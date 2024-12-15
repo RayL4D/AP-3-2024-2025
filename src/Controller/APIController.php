@@ -433,38 +433,40 @@ class APIController extends AbstractController
     }
 
     #[Route('/api/orders/complete/{id}', name: 'app_api_complete_order', methods: ['POST'])]
-public function completeOrder(
-    int $id,
-    EntityManagerInterface $entityManager,
-    Security $security
-): JsonResponse {
-    $user = $security->getUser();
-
-    if (!$user) {
-        return new JsonResponse(['message' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+    public function completeOrder(
+        int $id,
+        EntityManagerInterface $entityManager,
+        Security $security
+    ): JsonResponse {
+        $user = $security->getUser();
+    
+        if (!$user) {
+            return new JsonResponse(['message' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+    
+        $order = $entityManager->getRepository(Commande::class)->find($id);
+    
+        if (!$order) {
+            return new JsonResponse(['message' => 'Commande introuvable'], JsonResponse::HTTP_NOT_FOUND);
+        }
+    
+        if ($order->getStatut() === 'Terminée') {
+            return new JsonResponse(['message' => 'Commande déjà terminée'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+    
+        // Vérifier que l'utilisateur est autorisé à modifier cette commande
+        if ($order->getLeUser() !== $user) {
+            return new JsonResponse(['message' => 'Action non autorisée'], JsonResponse::HTTP_FORBIDDEN);
+        }
+    
+        // Mettre à jour le statut et la date de la commande
+        $order->setStatut('Terminée');
+        $order->setDate(new \DateTime()); // Mise à jour de la date avec la date actuelle
+        $entityManager->flush();
+    
+        return new JsonResponse(['message' => 'Commande terminée avec succès']);
     }
-
-    $order = $entityManager->getRepository(Commande::class)->find($id);
-
-    if (!$order) {
-        return new JsonResponse(['message' => 'Commande introuvable'], JsonResponse::HTTP_NOT_FOUND);
-    }
-
-    if ($order->getStatut() === 'Terminée') {
-        return new JsonResponse(['message' => 'Commande déjà terminée'], JsonResponse::HTTP_BAD_REQUEST);
-    }
-
-    // Vérifier que l'utilisateur est autorisé à modifier cette commande
-    if ($order->getLeUser() !== $user) {
-        return new JsonResponse(['message' => 'Action non autorisée'], JsonResponse::HTTP_FORBIDDEN);
-    }
-
-    $order->setStatut('Terminée');
-    $entityManager->flush();
-
-    return new JsonResponse(['message' => 'Commande terminée avec succès']);
-}
-
+    
 
 // Ajoutez ceci dans votre APIController
 
