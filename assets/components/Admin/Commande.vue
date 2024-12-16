@@ -1,43 +1,61 @@
 <template>
   <div class="a-commande-app">
+    <!-- Barre de navigation -->
     <Navbar />
+    
     <div class="content-container">
-      <!-- Colonne gauche : Commandes -->
+      <!-- Colonne gauche : Liste des commandes -->
       <div class="commandes-container">
         <h2 class="title">Commandes Administrateur</h2>
 
+        <!-- Affiche un message de chargement tant que les commandes ne sont pas disponibles -->
         <div v-if="loading" class="loading">Chargement des commandes...</div>
+
+        <!-- Message si aucune commande n'est disponible -->
         <div v-else-if="orders.length === 0" class="no-orders">Vous n'avez aucune commande.</div>
+
+        <!-- Liste des commandes (affichée uniquement si des commandes existent) -->
         <div v-else>
           <div class="orders-list">
+            <!-- Affiche chaque commande avec ses détails -->
             <div v-for="order in paginatedOrders" :key="order.id" class="order-card">
+              <!-- En-tête de la commande -->
               <div class="order-header">
                 <h3 class="order-title">
+                  <!-- ID de la commande -->
                   <span class="order-id">Commande #{{ order.id }}</span>
+                  <!-- Statut de la commande, formaté pour styliser en fonction du statut -->
                   <span :class="['order-status', order.statut.toLowerCase().replace(/ /g, '-')]">
                     {{ order.statut }}
                   </span>
+                  <!-- Date de la commande -->
                   <span class="order-date">{{ order.date }}</span>
                 </h3>
               </div>
 
+              <!-- Détails des produits dans la commande -->
               <div class="order-details">
                 <ul>
+                  <!-- Liste des produits dans la commande -->
                   <li v-for="detail in order.details" :key="detail.produit_id" class="order-detail">
+                    <!-- Nom du produit -->
                     <span class="product-name">{{ detail.produit_nom }}</span>
                     <div class="product-info">
+                      <!-- Quantité commandée -->
                       <span class="product-quantity">Quantité: {{ detail.quantite }}</span>
+                      <!-- Prix unitaire -->
                       <span class="product-price">Prix: {{ detail.prix }} €</span>
                     </div>
                   </li>
                 </ul>
               </div>
 
+              <!-- Prix total de la commande -->
               <div class="order-total">
                 <strong>Prix total: {{ getOrderTotal(order) }} €</strong>
               </div>
 
-              <!-- Bouton Prendre en charge -->
+              <!-- Bouton pour prendre en charge la commande (visible uniquement pour les commandes "validées") -->
               <button
                 v-if="order.statut.toLowerCase() === 'validée'"
                 class="take-order-btn"
@@ -48,11 +66,15 @@
             </div>
           </div>
 
+          <!-- Pagination pour naviguer entre les pages de commandes -->
           <div class="pagination">
+            <!-- Bouton pour passer à la page précédente -->
             <button @click="previousPage" :disabled="currentPage === 1" class="pagination-btn">
               Précédent
             </button>
+            <!-- Affiche le numéro de la page actuelle et le nombre total de pages -->
             <span class="pagination-info">Page {{ currentPage }} sur {{ totalPages }}</span>
+            <!-- Bouton pour passer à la page suivante -->
             <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-btn">
               Suivant
             </button>
@@ -60,16 +82,20 @@
         </div>
       </div>
 
-      <!-- Colonne droite : Chemin optimal -->
+      <!-- Colonne droite : Chemin optimal pour traiter la commande -->
       <div class="optimal-path-container" v-if="optimalPath.length">
         <h3>Chemin Optimal</h3>
         <div class="optimal-path-list">
+          <!-- Liste des produits à récupérer dans l'ordre optimal -->
           <ul>
             <li v-for="(product, index) in optimalPath" :key="index">
+              <!-- Nom et emplacement du produit -->
               <strong>{{ product.nom }}</strong> - Emplacement: ({{ product.x }}, {{ product.y }})
             </li>
           </ul>
         </div>
+        
+        <!-- Bouton pour terminer la commande (désactivé si aucune commande en cours ou si elle est déjà terminée) -->
         <button
           class="take-order-btn"
           @click="completeOrder(currentOrderId)"
@@ -82,37 +108,47 @@
   </div>
 </template>
 
+
 <script>
 import Navbar from './NavbarAdmin.vue';
 
 export default {
   name: "CommandesAdmin",
   components: { Navbar },
+  
+  // Déclaration des données du composant
   data() {
     return {
-      orders: [],
-      produits: [],
-      loading: true,
-      currentPage: 1,
-      ordersPerPage: 3,
-      optimalPath: [],
-      errorMessage: '',
-      currentOrderId: null, // ID de la commande active
-      isOrderCompleted: false, // État de la commande active
+      orders: [],  // Liste des commandes
+      produits: [],  // Liste des produits
+      loading: true,  // État de chargement des données
+      currentPage: 1,  // Page courante pour la pagination
+      ordersPerPage: 3,  // Nombre de commandes par page
+      optimalPath: [],  // Liste des produits dans l'ordre optimal
+      errorMessage: '',  // Message d'erreur
+      currentOrderId: null,  // ID de la commande active
+      isOrderCompleted: false,  // État de la commande active (si terminée ou non)
     };
   },
+  
+  // Calcul des commandes à afficher pour la page courante
   computed: {
     paginatedOrders() {
       const startIndex = (this.currentPage - 1) * this.ordersPerPage;
       const endIndex = startIndex + this.ordersPerPage;
-      return this.orders.slice(startIndex, endIndex);
+      return this.orders.slice(startIndex, endIndex);  // Sélectionne les commandes pour la page courante
     },
+    
+    // Calcul du nombre total de pages pour la pagination
     totalPages() {
       return Math.ceil(this.orders.length / this.ordersPerPage);
     },
   },
+  
+  // Récupération des données des commandes et des produits au montage du composant
   async mounted() {
     try {
+      // Récupère les commandes depuis l'API
       const response = await fetch('/api/orders/user/admin', {
         method: 'GET',
         headers: {
@@ -121,6 +157,7 @@ export default {
         },
       });
 
+      // Si la réponse est correcte, on trie les commandes par date
       if (response.ok) {
         const data = await response.json();
         this.orders = data.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -128,6 +165,7 @@ export default {
         throw new Error('Erreur lors de la récupération des commandes.');
       }
 
+      // Récupère les produits depuis l'API
       const produitsResponse = await fetch('/api/produits', {
         method: 'GET',
         headers: {
@@ -135,6 +173,7 @@ export default {
         },
       });
 
+      // Si la réponse est correcte, on récupère les produits
       if (produitsResponse.ok) {
         const produitsData = await produitsResponse.json();
         this.produits = produitsData;
@@ -142,39 +181,53 @@ export default {
         throw new Error('Erreur lors de la récupération des produits.');
       }
     } catch (error) {
+      // Si une erreur se produit, on affiche le message d'erreur
       this.errorMessage = error.message;
       console.error('Erreur de connexion', error);
     } finally {
-      this.loading = false;
+      this.loading = false;  // Met à jour l'état de chargement
     }
   },
+  
+  // Définition des méthodes du composant
   methods: {
+    // Gérer la page précédente de la pagination
     previousPage() {
       if (this.currentPage > 1) {
-        this.currentPage--;
+        this.currentPage--;  // Diminue la page courante
       }
     },
+    
+    // Gérer la page suivante de la pagination
     nextPage() {
       if (this.currentPage < this.totalPages) {
-        this.currentPage++;
+        this.currentPage++;  // Augmente la page courante
       }
     },
+    
+    // Calcul du total d'une commande
     getOrderTotal(order) {
       return order.details.reduce((total, detail) => {
-        return total + detail.prix * detail.quantite;
-      }, 0).toFixed(2);
+        return total + detail.prix * detail.quantite;  // Calcule le total de la commande
+      }, 0).toFixed(2);  // Retourne le total formaté en 2 décimales
     },
+    
+    // Marquer une commande comme prise en charge et calculer le chemin optimal
     takeOrder(orderId) {
       const order = this.orders.find(order => order.id === orderId);
+      // Récupère les produits associés à la commande
       const orderedProducts = order.details.map(detail => {
         return this.produits.find(produit => produit.id === detail.produit_id);
       });
 
+      // Calcule le chemin optimal pour récupérer les produits
       const startProduct = orderedProducts[0];
       this.optimalPath = this.dijkstra(startProduct, orderedProducts);
-      this.currentOrderId = orderId; // Définit la commande active
-      this.isOrderCompleted = order.statut === 'Terminée'; // Vérifie l'état de la commande
+      this.currentOrderId = orderId;  // Définit la commande active
+      this.isOrderCompleted = order.statut === 'Terminée';  // Vérifie si la commande est terminée
     },
+    
+    // Marquer la commande comme terminée dans l'API
     async completeOrder(orderId) {
       try {
         const response = await fetch(`/api/orders/complete/${orderId}`, {
@@ -190,11 +243,11 @@ export default {
           throw new Error(errorData.message || 'Erreur lors de la mise à jour de la commande.');
         }
 
-        // Mise à jour locale des données
+        // Mise à jour locale de l'état de la commande
         const updatedOrder = this.orders.find(order => order.id === orderId);
         if (updatedOrder) {
           updatedOrder.statut = 'Terminée';
-          this.isOrderCompleted = true; // Marque la commande comme terminée
+          this.isOrderCompleted = true;  // Marque la commande comme terminée
         }
 
         alert('Commande terminée avec succès.');
@@ -203,6 +256,8 @@ export default {
         alert('Impossible de terminer la commande. Veuillez réessayer.');
       }
     },
+    
+    // Algorithme de Dijkstra pour déterminer le chemin optimal des produits
     dijkstra(startProduct, orderedProducts) {
       const graph = this.buildGraph(orderedProducts);
       const path = [];
@@ -211,6 +266,7 @@ export default {
 
       path.push(startProduct);
 
+      // Recherche du produit le plus proche à chaque étape
       while (unvisitedProducts.length > 0) {
         const currentProduct = unvisitedProducts.find(p => p.id === currentId);
         unvisitedProducts.splice(unvisitedProducts.indexOf(currentProduct), 1);
@@ -223,15 +279,17 @@ export default {
         }, { product: null, distance: Infinity });
 
         if (nextProduct.product) {
-          path.push(nextProduct.product);
+          path.push(nextProduct.product);  // Ajoute le produit suivant au chemin
           currentId = nextProduct.product.id;
         } else {
           break;
         }
       }
 
-      return path;
+      return path;  // Retourne le chemin optimal
     },
+    
+    // Construction du graphe des produits pour l'algorithme de Dijkstra
     buildGraph(products) {
       const graph = {};
       products.forEach(product => {
@@ -244,15 +302,14 @@ export default {
             )
           }));
       });
-      return graph;
+      return graph;  // Retourne le graphe des distances
     },
   },
 };
 </script>
 
+
 <style scoped>
-
-
 .a-commande-app {
   font-family: 'Arial', sans-serif;
   color: #333;

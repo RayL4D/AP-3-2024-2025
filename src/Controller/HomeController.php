@@ -20,14 +20,6 @@ class HomeController extends AbstractController
         ]);
     }
 
-    #[Route('/panier', name: 'app_panier')]
-    public function Panier(DetailRepository $detailRepository): Response
-    {
-        $panier = $detailRepository->findAll();
-        return $this->render('user/panier.html.twig', [
-            'panier' => $panier,
-        ]);
-    }
 
     #[Route('/commande', name: 'app_commande')]
     public function Commande(DetailRepository $detailRepository): Response
