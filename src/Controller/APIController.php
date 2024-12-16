@@ -535,11 +535,6 @@ class APIController extends AbstractController
             return new JsonResponse(['message' => 'Commande déjà terminée'], JsonResponse::HTTP_BAD_REQUEST);
         }
     
-        // Vérifie si l'utilisateur a le droit de modifier cette commande
-        if ($order->getLeUser() !== $user) {
-            return new JsonResponse(['message' => 'Action non autorisée'], JsonResponse::HTTP_FORBIDDEN);
-        }
-    
         // Met à jour le statut et la date de la commande
         $order->setStatut('Terminée');
         $order->setDate(new \DateTime()); // Ajoute la date actuelle
