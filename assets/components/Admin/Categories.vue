@@ -65,32 +65,33 @@ export default {
       }
     };
 
-    // Fonction pour enregistrer une catégorie (ajout ou mise à jour)
-    const saveCategorie = async () => {
+  // Fonction pour enregistrer une catégorie (ajout ou mise à jour)
+  const saveCategorie = async () => {
   try {
     let response;
-    // Si une catégorie est en mode édition (ID défini), c'est une mise à jour
+
+    // Vérifie si nous sommes en mode édition
     if (currentCategorie.value.id) {
-      // Envoi de la requête PUT pour mettre à jour le nom de la catégorie
-      response = await fetch(`/api/categories/${currentCategorie.value.id}`, {
-        method: 'PUT', // Méthode PUT pour la mise à jour
+      // Requête PUT pour mettre à jour le nom
+      response = await fetch(`/api/categories/update/${currentCategorie.value.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ nom: currentCategorie.value.nom }), // Envoi du nouveau nom de la catégorie
+        body: JSON.stringify({ nom: currentCategorie.value.nom }), // Envoi uniquement le nom
       });
 
       if (!response.ok) {
         throw new Error('Erreur lors de la mise à jour de la catégorie');
       }
     } else {
-      // Si pas d'ID, c'est une nouvelle catégorie (ajout)
+      // Requête POST pour ajouter une nouvelle catégorie
       response = await fetch('/api/categories/add', {
-        method: 'POST', // Méthode POST pour l'ajout
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(currentCategorie.value),
+        body: JSON.stringify({ nom: currentCategorie.value.nom }), // Envoi le nom
       });
 
       if (!response.ok) {
@@ -98,7 +99,7 @@ export default {
       }
     }
 
-    // Rafraîchir la liste des catégories après la mise à jour
+    // Rafraîchir la liste des catégories
     await fetchCategories();
     resetForm(); // Réinitialiser le formulaire
   } catch (error) {

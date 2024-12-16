@@ -21,7 +21,6 @@ use Symfony\Bundle\SecurityBundle\Security;
 
 class APIController extends AbstractController
 {
-    private int $categorieCounter = 1; // Compteur pour l'assignation des valeurs x
     private int $produitCounter = 1;   // Compteur pour l'assignation des valeurs y
 
     #[Route('/api', name: 'app_api')]
@@ -54,95 +53,116 @@ class APIController extends AbstractController
     #[Route('/api/produits/add', name: 'app_api_add_produit', methods: ['POST'])]
     public function addProduit(Request $request, EntityManagerInterface $entityManager, CategorieRepository $categorieRepository, ProduitRepository $produitRepository): JsonResponse
     {
+        // Décoder le contenu JSON de la requête
         $data = json_decode($request->getContent(), true);
-    
+        
+        // Vérifier si toutes les données requises sont présentes
         if (!isset($data['nom'], $data['prix'], $data['categorie_id'], $data['quantiteStock'])) {
+            // Retourner une réponse d'erreur si les données sont invalides
             return new JsonResponse(['status' => 'Invalid data'], JsonResponse::HTTP_BAD_REQUEST);
         }
-    
+        
+        // Trouver la catégorie correspondante dans la base de données
         $categorie = $categorieRepository->find($data['categorie_id']);
         if (!$categorie) {
+            // Retourner une réponse d'erreur si la catégorie n'existe pas
             return new JsonResponse(['status' => 'Invalid category'], JsonResponse::HTTP_BAD_REQUEST);
         }
-    
-        // Calculer la valeur de y pour le produit
+        
+        // Calculer la valeur de Y pour le produit en fonction du nombre de produits existants dans la catégorie
         $existingProducts = $produitRepository->findBy(['laCategorie' => $categorie]);
         $newY = count($existingProducts) + 1;
-    
+        
+        // Créer un nouvel objet Produit et remplir ses propriétés
         $produit = new Produit();
         $produit->setNom($data['nom']);
         $produit->setPrix($data['prix']);
         $produit->setLaCategorie($categorie);
-    
+        
+        // Créer un objet Stock et définir la quantité
         $stock = new Stock();
         $stock->setQuantiteStock($data['quantiteStock']);
         $produit->setLeStock($stock);
-    
+        
+        // Créer un objet Emplacement et définir ses coordonnées
         $emplacement = new Emplacement();
         $emplacement->setX($categorie->getLeEmplacement()->getX());
         $emplacement->setY($newY);
         $produit->setLeEmplacement($emplacement);
-    
+        
+        // Persister le nouvel objet Produit dans la base de données
         $entityManager->persist($produit);
         $entityManager->flush();
-    
+        
+        // Retourner une réponse de succès
         return new JsonResponse(['status' => 'Produit ajouté avec succès'], JsonResponse::HTTP_CREATED);
     }
-
+    
     #[Route('/api/produits/update/{id}', name: 'app_api_update_produit', methods: ['PUT'])]
     public function updateProduit(Request $request, int $id, EntityManagerInterface $entityManager, CategorieRepository $categorieRepository): JsonResponse
     {
+        // Trouver le produit à mettre à jour en utilisant l'identifiant
         $produit = $entityManager->getRepository(Produit::class)->find($id);
-
+    
         if (!$produit) {
+            // Retourner une réponse d'erreur si le produit n'est pas trouvé
             return new JsonResponse(['status' => 'Produit non trouvé'], JsonResponse::HTTP_NOT_FOUND);
         }
-
+    
+        // Décoder le contenu JSON de la requête pour récupérer les nouvelles données
         $data = json_decode($request->getContent(), true);
-
+    
+        // Mettre à jour les propriétés du produit si de nouvelles valeurs sont fournies
         if (isset($data['nom'])) {
             $produit->setNom($data['nom']);
         }
-
+    
         if (isset($data['prix'])) {
             $produit->setPrix($data['prix']);
         }
-
+    
         if (isset($data['categorie_id'])) {
             $categorie = $categorieRepository->find($data['categorie_id']);
             if ($categorie) {
                 $produit->setLaCategorie($categorie);
             }
         }
-
+    
         if (isset($data['quantiteStock'])) {
             $produit->getLeStock()->setQuantiteStock($data['quantiteStock']);
         }
-
+    
         if (isset($data['x']) && isset($data['y'])) {
             $produit->getLeEmplacement()->setX($data['x']);
             $produit->getLeEmplacement()->setY($data['y']);
         }
-
+    
+        // Sauvegarder les modifications apportées au produit
         $entityManager->flush();
-
+    
+        // Retourner une réponse de succès
         return new JsonResponse(['status' => 'Produit mis à jour avec succès']);
     }
-
+    
     #[Route('/api/produits/delete/{id}', name: 'app_api_delete_produit', methods: ['DELETE'])]
     public function deleteProduit(int $id, EntityManagerInterface $entityManager): JsonResponse
     {
+        // Trouver le produit à supprimer
         $produit = $entityManager->getRepository(Produit::class)->find($id);
-
+    
         if (!$produit) {
+            // Retourner une réponse d'erreur si le produit n'est pas trouvé
             return new JsonResponse(['status' => 'Produit non trouvé'], JsonResponse::HTTP_NOT_FOUND);
         }
-
+    
+        // Supprimer le produit de la base de données
         $entityManager->remove($produit);
         $entityManager->flush();
-
+    
+        // Retourner une réponse de succès
         return new JsonResponse(['status' => 'Produit supprimé avec succès']);
     }
+
     // Récupère la liste des catégories
     #[Route('/api/categories', name: 'api_categories', methods: ['GET'])]
     public function getCategories(CategorieRepository $categorieRepository): JsonResponse
@@ -207,6 +227,37 @@ class APIController extends AbstractController
     
         return new JsonResponse(['status' => 'Catégorie supprimée avec succès']);
     }
+
+
+    #[Route('/api/categories/update/{id}', name: 'app_api_update_categorie', methods: ['PUT'])]
+    public function updateCategorie(Request $request, int $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        // Trouver la catégorie à mettre à jour
+        $categorie = $entityManager->getRepository(Categorie::class)->find($id);
+
+        if (!$categorie) {
+            // Retourner une erreur si la catégorie n'existe pas
+            return new JsonResponse(['status' => 'Catégorie non trouvée'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        // Décoder le contenu JSON de la requête
+        $data = json_decode($request->getContent(), true);
+
+        // Vérifier si le champ "nom" est fourni
+        if (!isset($data['nom']) || empty($data['nom'])) {
+            return new JsonResponse(['status' => 'Le champ "nom" est requis'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        // Mettre à jour le nom de la catégorie
+        $categorie->setNom($data['nom']);
+
+        // Sauvegarder les modifications
+        $entityManager->flush();
+
+        // Retourner une réponse de succès
+        return new JsonResponse(['status' => 'Nom de la catégorie mis à jour avec succès']);
+    }
+
 
 
     #[Route('/api/orders', name: 'app_api_create_order', methods: ['POST'])]
@@ -365,70 +416,95 @@ class APIController extends AbstractController
     #[Route('/api/orders/{id}/details', name: 'app_api_get_order_details', methods: ['GET'])]
     public function getOrderDetails(int $id, EntityManagerInterface $entityManager): JsonResponse
     {
+        // Récupère une commande spécifique en utilisant son ID
         $commande = $entityManager->getRepository(Commande::class)->find($id);
 
+        // Vérifie si la commande existe
         if (!$commande) {
+            // Renvoie une réponse JSON indiquant que la commande n'a pas été trouvée
             return new JsonResponse(['status' => 'Commande non trouvée'], JsonResponse::HTTP_NOT_FOUND);
         }
 
+        // Récupère les détails de la commande (les produits associés, quantités, etc.)
         $details = $commande->getLesDetails();
+
+        // Transforme les détails en un tableau contenant des informations pertinentes
         $data = array_map(function ($detail) {
             return [
-                'produit_id' => $detail->getLeProduit()->getId(),
-                'produit_nom' => $detail->getLeProduit()->getNom(),
-                'quantite' => $detail->getQuantiteProduit(),
-                'prix' => $detail->getLeProduit()->getPrix(),
+                'produit_id' => $detail->getLeProduit()->getId(),       // ID du produit
+                'produit_nom' => $detail->getLeProduit()->getNom(),     // Nom du produit
+                'quantite' => $detail->getQuantiteProduit(),            // Quantité commandée
+                'prix' => $detail->getLeProduit()->getPrix(),           // Prix du produit
             ];
         }, $details->toArray());
 
+        // Renvoie les détails de la commande sous forme de réponse JSON
         return new JsonResponse($data);
     }
+
 
 
     #[Route('/api/orders/current', name: 'app_api_current_order', methods: ['GET'])]
     public function getCurrentOrder(EntityManagerInterface $entityManager, Security $security): JsonResponse
     {
+        // Récupère l'utilisateur actuellement authentifié
         $user = $security->getUser();
-    
+
+        // Vérifie si l'utilisateur est connecté
         if (!$user) {
+            // Renvoie une réponse JSON avec une erreur d'autorisation
             return new JsonResponse(['status' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
         }
-    
+
+        // Récupère la commande "en cours de création" associée à l'utilisateur
         $currentOrder = $entityManager->getRepository(Commande::class)
             ->findOneBy(['leUser' => $user, 'statut' => 'En cours de création']);
-    
+
+        // Vérifie si une commande en cours existe
         if (!$currentOrder) {
+            // Renvoie une réponse JSON indiquant qu'il n'y a pas de commande active
             return new JsonResponse(['status' => 'No current order'], JsonResponse::HTTP_NOT_FOUND);
         }
-    
+
+        // Renvoie les informations de la commande en cours sous forme de réponse JSON
         return new JsonResponse([
-            'id' => $currentOrder->getId(),
-            'date' => $currentOrder->getDate()->format('Y-m-d H:i:s'),
-            'statut' => $currentOrder->getStatut(),
+            'id' => $currentOrder->getId(),                         // ID de la commande
+            'date' => $currentOrder->getDate()->format('Y-m-d H:i:s'), // Date de création de la commande
+            'statut' => $currentOrder->getStatut(),                 // Statut de la commande
         ]);
     }
+
     
 
     #[Route('/api/orders/validate', name: 'app_api_validate_order', methods: ['POST'])]
     public function validateOrder(EntityManagerInterface $entityManager, Security $security): JsonResponse
     {
+        // Récupère l'utilisateur actuellement authentifié
         $user = $security->getUser();
 
+        // Vérifie si l'utilisateur est connecté
         if (!$user) {
+            // Renvoie une réponse JSON avec une erreur d'autorisation
             return new JsonResponse(['status' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
+        // Récupère la commande "en cours de création" associée à l'utilisateur
         $currentOrder = $entityManager->getRepository(Commande::class)
             ->findOneBy(['leUser' => $user, 'statut' => 'En cours de création']);
 
+        // Vérifie si une commande en cours existe
         if (!$currentOrder) {
+            // Renvoie une réponse JSON indiquant qu'il n'y a pas de commande active
             return new JsonResponse(['status' => 'No current order'], JsonResponse::HTTP_NOT_FOUND);
         }
 
-        // Valider la commande
+        // Change le statut de la commande à "Validée"
         $currentOrder->setStatut('Validée');
+
+        // Enregistre les modifications dans la base de données
         $entityManager->flush();
 
+        // Renvoie une réponse JSON confirmant la validation
         return new JsonResponse(['status' => 'Commande validée avec succès']);
     }
 
@@ -438,213 +514,226 @@ class APIController extends AbstractController
         EntityManagerInterface $entityManager,
         Security $security
     ): JsonResponse {
+        // Récupère l'utilisateur actuellement authentifié
         $user = $security->getUser();
     
+        // Vérifie si l'utilisateur est connecté
         if (!$user) {
             return new JsonResponse(['message' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
         }
     
+        // Recherche de la commande à partir de l'ID
         $order = $entityManager->getRepository(Commande::class)->find($id);
     
+        // Vérifie si la commande existe
         if (!$order) {
             return new JsonResponse(['message' => 'Commande introuvable'], JsonResponse::HTTP_NOT_FOUND);
         }
     
+        // Vérifie si la commande est déjà terminée
         if ($order->getStatut() === 'Terminée') {
             return new JsonResponse(['message' => 'Commande déjà terminée'], JsonResponse::HTTP_BAD_REQUEST);
         }
     
-        // Vérifier que l'utilisateur est autorisé à modifier cette commande
+        // Vérifie si l'utilisateur a le droit de modifier cette commande
         if ($order->getLeUser() !== $user) {
             return new JsonResponse(['message' => 'Action non autorisée'], JsonResponse::HTTP_FORBIDDEN);
         }
     
-        // Mettre à jour le statut et la date de la commande
+        // Met à jour le statut et la date de la commande
         $order->setStatut('Terminée');
-        $order->setDate(new \DateTime()); // Mise à jour de la date avec la date actuelle
-        $entityManager->flush();
+        $order->setDate(new \DateTime()); // Ajoute la date actuelle
+        $entityManager->flush(); // Enregistre les modifications dans la base de données
     
+        // Renvoie une confirmation de succès
         return new JsonResponse(['message' => 'Commande terminée avec succès']);
     }
     
 
-// Ajoutez ceci dans votre APIController
-
-#[Route('/api/orders/user', name: 'app_api_user_orders', methods: ['GET'])]
-public function getUserOrders(EntityManagerInterface $entityManager, Security $security): JsonResponse
-{
-    $user = $security->getUser();
-
-    if (!$user) {
-        return new JsonResponse(['status' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+    #[Route('/api/orders/user', name: 'app_api_user_orders', methods: ['GET'])]
+    public function getUserOrders(EntityManagerInterface $entityManager, Security $security): JsonResponse
+    {
+        // Récupère l'utilisateur actuellement authentifié
+        $user = $security->getUser();
+    
+        // Vérifie si l'utilisateur est connecté
+        if (!$user) {
+            return new JsonResponse(['status' => 'Unauthorized'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+    
+        // Récupère toutes les commandes associées à l'utilisateur
+        $commandes = $entityManager->getRepository(Commande::class)->findBy(['leUser' => $user]);
+    
+        // Prépare les données pour une réponse JSON
+        $data = array_map(function ($commande) {
+            return [
+                'id' => $commande->getId(),
+                'date' => $commande->getDate()->format('Y-m-d H:i:s'), // Date formatée
+                'statut' => $commande->getStatut(),
+                'details' => array_map(function ($detail) {
+                    $produit = $detail->getLeProduit();
+                    $stock = $produit->getLeStock();
+    
+                    return [
+                        'produit_id' => $produit->getId(),
+                        'produit_nom' => $produit->getNom(),
+                        'quantite' => $detail->getQuantiteProduit(),
+                        'prix' => $produit->getPrix(),
+                        'stock_quantite' => $stock ? $stock->getQuantiteStock() : null, // Stock disponible
+                    ];
+                }, $commande->getLesDetails()->toArray())
+            ];
+        }, $commandes);
+    
+        // Renvoie les données des commandes de l'utilisateur
+        return new JsonResponse($data);
     }
+    
 
-    // Récupérer les commandes de l'utilisateur connecté
-    $commandes = $entityManager->getRepository(Commande::class)->findBy(['leUser' => $user]);
+    #[Route('/api/orders/user/admin', name: 'app_api_user_orders_admin', methods: ['GET'])]
+    public function getUserOrdersAdmin(EntityManagerInterface $entityManager): JsonResponse
+    {
+        // Récupère toutes les commandes (tous les utilisateurs)
+        $commandes = $entityManager->getRepository(Commande::class)->findAll();
+    
+        // Prépare les données pour une réponse JSON
+        $data = array_map(function ($commande) {
+            $user = $commande->getLeUser();
+    
+            return [
+                'id' => $commande->getId(),
+                'date' => $commande->getDate()->format('Y-m-d H:i:s'), // Date formatée
+                'statut' => $commande->getStatut(),
+                'created_by' => $user ? [
+                    'id' => $user->getId(),
+                    'email' => $user->getEmail(),
+                    'nom' => $user->getNom(), // Nom de l'utilisateur qui a créé la commande
+                ] : null,
+                'details' => array_map(function ($detail) {
+                    $produit = $detail->getLeProduit();
+                    $stock = $produit->getLeStock();
+    
+                    return [
+                        'produit_id' => $produit->getId(),
+                        'produit_nom' => $produit->getNom(),
+                        'quantite' => $detail->getQuantiteProduit(),
+                        'prix' => $produit->getPrix(),
+                        'stock_quantite' => $stock ? $stock->getQuantiteStock() : null, // Stock disponible
+                    ];
+                }, $commande->getLesDetails()->toArray()),
+            ];
+        }, $commandes);
+    
+        // Renvoie les données de toutes les commandes
+        return new JsonResponse($data);
+    }
+    
 
-    $data = array_map(function ($commande) {
-        return [
-            'id' => $commande->getId(),
-            'date' => $commande->getDate()->format('Y-m-d H:i:s'),
-            'statut' => $commande->getStatut(),
-            'details' => array_map(function ($detail) {
-                $produit = $detail->getLeProduit();
-                $stock = $produit->getLeStock();
+    #[Route('/api/produits/{id}/details', name: 'app_api_get_produit_details', methods: ['GET'])]
+    public function getProduitDetails(int $id, ProduitRepository $produitRepository): JsonResponse
+    {
+        // Rechercher le produit par son ID
+        $produit = $produitRepository->find($id);
 
-                return [
-                    'produit_id' => $produit->getId(),
-                    'produit_nom' => $produit->getNom(),
-                    'quantite' => $detail->getQuantiteProduit(),
-                    'prix' => $produit->getPrix(),
-                    'stock_quantite' => $stock ? $stock->getQuantiteStock() : null,  // Quantité en stock
-                ];
-            }, $commande->getLesDetails()->toArray())
-        ];
-    }, $commandes);
+        if (!$produit) {
+            return new JsonResponse(['status' => 'Produit non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+        }
 
-    return new JsonResponse($data);
-}
-
-#[Route('/api/orders/user/admin', name: 'app_api_user_orders_admin', methods: ['GET'])]
-public function getUserOrdersAdmin(EntityManagerInterface $entityManager): JsonResponse
-{
-    $commandes = $entityManager->getRepository(Commande::class)->findAll();
-
-    $data = array_map(function ($commande) {
-        $user = $commande->getLeUser();
-
-        return [
-            'id' => $commande->getId(),
-            'date' => $commande->getDate()->format('Y-m-d H:i:s'),
-            'statut' => $commande->getStatut(),
-            'created_by' => $user ? [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'nom' => $user->getNom(),
+        // Récupérer les détails du produit (nom, prix, catégorie, stock, emplacement)
+        $data = [
+            'id' => $produit->getId(),
+            'nom' => $produit->getNom(),
+            'prix' => $produit->getPrix(),
+            'categorie' => $produit->getLaCategorie() ? [
+                'id' => $produit->getLaCategorie()->getId(),
+                'nom' => $produit->getLaCategorie()->getNom(),
             ] : null,
-            'details' => array_map(function ($detail) {
-                $produit = $detail->getLeProduit();
-                $stock = $produit->getLeStock();
-
-                return [
-                    'produit_id' => $produit->getId(),
-                    'produit_nom' => $produit->getNom(),
-                    'quantite' => $detail->getQuantiteProduit(),
-                    'prix' => $produit->getPrix(),
-                    'stock_quantite' => $stock ? $stock->getQuantiteStock() : null,
-                ];
-            }, $commande->getLesDetails()->toArray()),
+            'quantiteStock' => $produit->getLeStock() ? $produit->getLeStock()->getQuantiteStock() : null,
+            'emplacement' => $produit->getLeEmplacement() ? [
+                'x' => $produit->getLeEmplacement()->getX(),
+                'y' => $produit->getLeEmplacement()->getY(),
+            ] : null,
         ];
-    }, $commandes);
 
-    return new JsonResponse($data);
-}
-
-#[Route('/api/produits/{id}/details', name: 'app_api_get_produit_details', methods: ['GET'])]
-public function getProduitDetails(int $id, ProduitRepository $produitRepository): JsonResponse
-{
-    // Rechercher le produit par son ID
-    $produit = $produitRepository->find($id);
-
-    if (!$produit) {
-        return new JsonResponse(['status' => 'Produit non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+        return new JsonResponse($data);
     }
 
-    // Récupérer les détails du produit (nom, prix, catégorie, stock, emplacement)
-    $data = [
-        'id' => $produit->getId(),
-        'nom' => $produit->getNom(),
-        'prix' => $produit->getPrix(),
-        'categorie' => $produit->getLaCategorie() ? [
-            'id' => $produit->getLaCategorie()->getId(),
-            'nom' => $produit->getLaCategorie()->getNom(),
-        ] : null,
-        'quantiteStock' => $produit->getLeStock() ? $produit->getLeStock()->getQuantiteStock() : null,
-        'emplacement' => $produit->getLeEmplacement() ? [
-            'x' => $produit->getLeEmplacement()->getX(),
-            'y' => $produit->getLeEmplacement()->getY(),
-        ] : null,
-    ];
+    #[Route('/api/stock/{id}/increment', name: 'app_api_increment_stock', methods: ['POST'])]
+    public function incrementStock(
+        int $id,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        StockRepository $stockRepository
+    ): JsonResponse {
+        // Récupérer l'entité Stock par son ID
+        $stock = $stockRepository->find($id);
 
-    return new JsonResponse($data);
-}
+        if (!$stock) {
+            return new JsonResponse(['status' => 'Stock non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+        }
 
-#[Route('/api/stock/{id}/increment', name: 'app_api_increment_stock', methods: ['POST'])]
-public function incrementStock(
-    int $id,
-    Request $request,
-    EntityManagerInterface $entityManager,
-    StockRepository $stockRepository
-): JsonResponse {
-    // Récupérer l'entité Stock par son ID
-    $stock = $stockRepository->find($id);
+        // Décoder les données de la requête pour obtenir la quantité à incrémenter
+        $data = json_decode($request->getContent(), true);
 
-    if (!$stock) {
-        return new JsonResponse(['status' => 'Stock non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+        if (!isset($data['quantite']) || $data['quantite'] <= 0) {
+            return new JsonResponse(['status' => 'Quantité invalide'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        $quantiteAIncrementer = (int) $data['quantite'];
+
+        // Incrémenter le stock
+        $stock->setQuantiteStock($stock->getQuantiteStock() + $quantiteAIncrementer);
+
+        // Sauvegarder les modifications
+        $entityManager->flush();
+
+        return new JsonResponse([
+            'status' => 'Stock incrémenté avec succès',
+            'nouveauStock' => $stock->getQuantiteStock(),
+        ], JsonResponse::HTTP_OK);
     }
 
-    // Décoder les données de la requête pour obtenir la quantité à incrémenter
-    $data = json_decode($request->getContent(), true);
+    #[Route('/api/stock/{id}/decrement', name: 'app_api_decrement_stock', methods: ['POST'])]
+    public function decrementStock(
+        int $id,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        StockRepository $stockRepository
+    ): JsonResponse {
+        // Récupérer l'entité Stock par son ID
+        $stock = $stockRepository->find($id);
 
-    if (!isset($data['quantite']) || $data['quantite'] <= 0) {
-        return new JsonResponse(['status' => 'Quantité invalide'], JsonResponse::HTTP_BAD_REQUEST);
+        if (!$stock) {
+            return new JsonResponse(['status' => 'Stock non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        // Décoder les données de la requête pour obtenir la quantité à décrémenter
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['quantite']) || $data['quantite'] <= 0) {
+            return new JsonResponse(['status' => 'Quantité invalide'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        $quantiteADecrementer = (int) $data['quantite'];
+
+        // Vérifier si le stock est suffisant
+        $stockActuel = $stock->getQuantiteStock();
+
+        if ($quantiteADecrementer > $stockActuel) {
+            return new JsonResponse(['status' => 'Stock insuffisant'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        // Décrémenter le stock
+        $stock->setQuantiteStock($stockActuel - $quantiteADecrementer);
+
+        // Sauvegarder les modifications
+        $entityManager->flush();
+
+        return new JsonResponse([
+            'status' => 'Stock décrémenté avec succès',
+            'nouveauStock' => $stock->getQuantiteStock(),
+        ], JsonResponse::HTTP_OK);
     }
-
-    $quantiteAIncrementer = (int) $data['quantite'];
-
-    // Incrémenter le stock
-    $stock->setQuantiteStock($stock->getQuantiteStock() + $quantiteAIncrementer);
-
-    // Sauvegarder les modifications
-    $entityManager->flush();
-
-    return new JsonResponse([
-        'status' => 'Stock incrémenté avec succès',
-        'nouveauStock' => $stock->getQuantiteStock(),
-    ], JsonResponse::HTTP_OK);
-}
-
-#[Route('/api/stock/{id}/decrement', name: 'app_api_decrement_stock', methods: ['POST'])]
-public function decrementStock(
-    int $id,
-    Request $request,
-    EntityManagerInterface $entityManager,
-    StockRepository $stockRepository
-): JsonResponse {
-    // Récupérer l'entité Stock par son ID
-    $stock = $stockRepository->find($id);
-
-    if (!$stock) {
-        return new JsonResponse(['status' => 'Stock non trouvé'], JsonResponse::HTTP_NOT_FOUND);
-    }
-
-    // Décoder les données de la requête pour obtenir la quantité à décrémenter
-    $data = json_decode($request->getContent(), true);
-
-    if (!isset($data['quantite']) || $data['quantite'] <= 0) {
-        return new JsonResponse(['status' => 'Quantité invalide'], JsonResponse::HTTP_BAD_REQUEST);
-    }
-
-    $quantiteADecrementer = (int) $data['quantite'];
-
-    // Vérifier si le stock est suffisant
-    $stockActuel = $stock->getQuantiteStock();
-
-    if ($quantiteADecrementer > $stockActuel) {
-        return new JsonResponse(['status' => 'Stock insuffisant'], JsonResponse::HTTP_BAD_REQUEST);
-    }
-
-    // Décrémenter le stock
-    $stock->setQuantiteStock($stockActuel - $quantiteADecrementer);
-
-    // Sauvegarder les modifications
-    $entityManager->flush();
-
-    return new JsonResponse([
-        'status' => 'Stock décrémenté avec succès',
-        'nouveauStock' => $stock->getQuantiteStock(),
-    ], JsonResponse::HTTP_OK);
-}
 
 
 }
